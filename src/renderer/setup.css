@@ -19,12 +19,12 @@ body {
   margin: 0;
   color: #b8bcc4;
 }
-label {
+label, .field {
   display: flex;
   flex-direction: column;
   gap: 6px;
 }
-label > span {
+label > span, .field > span {
   font-weight: bold;
   font-size: 13px;
 }
@@ -153,7 +153,7 @@ small {
 .advanced[open] summary {
   margin-bottom: 10px;
 }
-.advanced label {
+.advanced label, .advanced .field {
   margin-bottom: 10px;
 }
 .error {

@@ -101,7 +101,7 @@ def finish_part(c, light=True):
 # 캐릭터 조립
 # ---------------------------------------------------------------------------
 # 기본 배치 (오른쪽을 보는 3/4 시점)
-HEAD = (19, 12, 8.5, 7.5)   # cx, cy, rx, ry
+HEAD = (19, 13, 9.5, 8.5)   # cx, cy, rx, ry
 BODY = (14, 23, 8.5, 5)
 
 
@@ -214,26 +214,28 @@ def draw_main(sp, pose, frame, bob, wave=False, highfive=False, tilt_x=0, tilt_y
     elif pose in ("lie", "sleep"):
         body.ellipse(13, 26, 10, 4, "o")
     else:
-        body.ellipse(18, 23 + bob, 6.5, 4.5, "o")   # 가슴
-        body.ellipse(10, 24 + bob, 5.5, 4.5, "o")   # 엉덩이(허벅지)
-        body.rect(10, 20 + bob, 18, 26 + bob, "o")  # 등 연결
+        body.ellipse(18, 24 + bob, 6, 4.2, "o")     # 가슴
+        body.ellipse(11, 25 + bob, 5.2, 4.2, "o")   # 엉덩이(허벅지)
+        body.rect(11, 22 + bob, 18, 27 + bob, "o")  # 등 연결
     c.merge(body)
 
     # --- 귀 (머리 뒤) ---
     if sp == "cat":
-        for x in (13, 24):
-            c.curve([(x - 2, hy - 5), (x, hy - 11 + ear_tilt), (x + 3, hy - 5)], "o", 2)
-            c.rect(x - 1, hy - 6, x + 3, hy - 4, "o")
-    elif sp == "fox":
         for x in (12, 24):
-            c.curve([(x - 2, hy - 5), (x + 1, hy - 12 + ear_tilt), (x + 4, hy - 5)], "o", 3)
-            c.rect(x - 1, hy - 7, x + 4, hy - 4, "o")
+            c.curve([(x - 2, hy - 6), (x + 1, hy - 13 + ear_tilt), (x + 4, hy - 6)], "o", 2)
+            c.rect(x - 1, hy - 8, x + 4, hy - 5, "o")
+    elif sp == "fox":
+        for x in (11, 24):
+            c.curve([(x - 2, hy - 6), (x + 1, hy - 13 + ear_tilt), (x + 4, hy - 6)], "o", 3)
+            c.rect(x - 1, hy - 8, x + 5, hy - 5, "o")
     elif sp == "rabbit":
-        for x in (15, 22):
-            c.ellipse(x, hy - 10 + ear_tilt, 2.2, 6.5, "o")
+        # 뒤로 살짝 기울어진 긴 귀
+        for x in (15, 21):
+            c.curve([(x, hy - 5), (x - 3, hy - 13 + ear_tilt)], "o", 3)
+            c.ellipse(x - 3, hy - 13 + ear_tilt, 1.8, 1.8, "o")
     elif sp == "bear":
-        c.ellipse(12, hy - 6, 3, 3, "o")
-        c.ellipse(26, hy - 6, 3, 3, "o")
+        c.ellipse(12, hy - 7, 3.2, 3.2, "o")
+        c.ellipse(26, hy - 7, 3.2, 3.2, "o")
 
     # --- 머리 ---
     c.ellipse(hx, hy, rx, ry, "o")
@@ -279,19 +281,18 @@ def draw_ears_front(sp, hx, hy):
     """머리 위에 그리는 귀 안쪽/늘어진 귀"""
     c = part()
     if sp == "cat":
-        for x in (13, 24):
-            c.put(x + 1, hy - 7, "p")
-            c.put(x + 1, hy - 6, "p")
-            c.put(x + 2, hy - 6, "p")
-    elif sp == "fox":
         for x in (12, 24):
-            c.rect(x + 1, hy - 7, x + 2, hy - 5, "w")
+            c.put(x + 1, hy - 10, "p")
+            c.rect(x, hy - 9, x + 2, hy - 8, "p")
+    elif sp == "fox":
+        for x in (11, 24):
+            c.rect(x + 1, hy - 9, x + 2, hy - 7, "w")
     elif sp == "rabbit":
-        for x in (15, 22):
-            c.ellipse(x, hy - 9, 0.9, 4.2, "p")
+        for x in (15, 21):
+            c.curve([(x - 1, hy - 7), (x - 3, hy - 12)], "p", 1)
     elif sp == "bear":
-        c.ellipse(12, hy - 6, 1.2, 1.2, "l")
-        c.ellipse(26, hy - 6, 1.2, 1.2, "l")
+        c.ellipse(12, hy - 7, 1.4, 1.4, "l")
+        c.ellipse(26, hy - 7, 1.4, 1.4, "l")
     elif sp == "dog":
         d = part()
         d.ellipse(11, hy + 1, 2.5, 5, "a")
@@ -319,16 +320,16 @@ def draw_head(sp, pose, bob, tilt_x=0, tilt_y=0):
 def draw_face(sp, hx, hy, eyes, extra=None):
     """눈, 코, 입, 볼. hx, hy 는 머리 중심."""
     c = part()
-    ex_l, ex_r = hx - 3, hx + 4  # 눈 x (왼쪽 눈은 왼쪽 열, 오른쪽 눈은 2칸)
+    ex_l, ex_r = hx - 3, hx + 4  # 눈 중심 x
     ey = hy - 1
     if sp == "penguin":
         ex_l, ex_r, ey = hx - 2, hx + 4, hy - 2
     # 눈
     if eyes == "open":
         for x in (ex_l, ex_r):
-            c.rect(x - 1, ey, x + 1, ey + 2, "k")
-            c.put(x, ey, "h")
-            c.put(x + 1, ey + 2, "h")
+            c.rect(x - 1, ey - 1, x + 1, ey + 2, "k")   # 3x4
+            c.rect(x - 1, ey - 1, x, ey, "h")            # 큰 하이라이트 2x2
+            c.put(x + 1, ey + 2, "h")                     # 작은 하이라이트
     elif eyes == "blink":
         for x in (ex_l, ex_r):
             c.rect(x - 1, ey + 2, x + 1, ey + 2, "d")
@@ -383,6 +384,11 @@ def draw_face(sp, hx, hy, eyes, extra=None):
 
 def draw_markings(sp, hx, hy, pose):
     c = part()
+    if sp not in ("penguin",) and pose not in ("lie", "sleep"):
+        if pose == "sit":
+            c.ellipse(16, 26, 3.5, 3.5, "l")
+        else:
+            c.ellipse(16, 26, 3.5, 2.2, "l")
     if sp == "cat":
         for dx in (-3, 0, 3):
             c.put(hx + dx - 2, hy - 6, "a")

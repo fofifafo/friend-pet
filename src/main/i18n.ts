@@ -8,6 +8,7 @@ export const LANG_NAMES: Record<Lang, string> = { ko: "한국어", en: "English"
 export type Dict = Record<string, string>;
 
 const ko: Dict = {
+  "tray.filtered": "친구 목록 필터: 방 {m}명 중 {n}명 표시 (설정 → 고급 설정에서 해제)",
   "setup.species": "캐릭터 종류",
   "species.cat": "고양이",
   "species.dog": "강아지",
@@ -28,7 +29,7 @@ const ko: Dict = {
   "setup.copy": "복사",
   "setup.copied": "복사됨",
   "setup.friends": "친구 목록",
-  "setup.friendsHint": "비워 두면 같은 초대 코드의 모두가 보입니다. 코드를 넣으면 그 친구들만 보입니다.",
+  "setup.friendsHint": "보통은 비워 둡니다. 같은 초대 코드의 모두가 보입니다. 특정 친구만 보고 싶을 때만 그 친구의 코드를 넣습니다.",
   "setup.friendPlaceholder": "친구 코드 입력",
   "setup.add": "추가",
   "setup.remove": "삭제",
@@ -110,6 +111,7 @@ const ko: Dict = {
 };
 
 const en: Dict = {
+  "tray.filtered": "Friend list filter: showing {n} of {m} in room (clear in Settings → Advanced)",
   "setup.species": "Character",
   "species.cat": "Cat",
   "species.dog": "Dog",
@@ -130,7 +132,7 @@ const en: Dict = {
   "setup.copy": "Copy",
   "setup.copied": "Copied",
   "setup.friends": "Friend list",
-  "setup.friendsHint": "Leave empty to see everyone with the same invite code. Add codes to see only those friends.",
+  "setup.friendsHint": "Usually leave this empty: everyone with the same invite code is shown. Add codes only to limit it to specific friends.",
   "setup.friendPlaceholder": "Enter a friend code",
   "setup.add": "Add",
   "setup.remove": "Remove",
@@ -212,6 +214,7 @@ const en: Dict = {
 };
 
 const ja: Dict = {
+  "tray.filtered": "フレンドリスト絞り込み: ルーム{m}人中{n}人を表示 (設定 → 詳細設定で解除)",
   "setup.species": "キャラクター",
   "species.cat": "ねこ",
   "species.dog": "いぬ",
@@ -232,7 +235,7 @@ const ja: Dict = {
   "setup.copy": "コピー",
   "setup.copied": "コピーしました",
   "setup.friends": "フレンドリスト",
-  "setup.friendsHint": "空のままなら同じ招待コードの全員が見えます。コードを入れるとその友だちだけ見えます。",
+  "setup.friendsHint": "通常は空のままにします。同じ招待コードの全員が見えます。特定の友だちだけ見たいときにそのコードを入れます。",
   "setup.friendPlaceholder": "フレンドコードを入力",
   "setup.add": "追加",
   "setup.remove": "削除",

@@ -390,6 +390,9 @@ function buildTrayMenu(): Menu {
   return Menu.buildFromTemplate([
     { label: T("tray.myStatus", { s: catLabel(myCategory) }), enabled: false },
     { label: T("tray.connection", { s: connLabel(), n: friends.length }), enabled: false },
+    ...(config.friends.length > 0
+      ? [{ label: T("tray.filtered", { n: friends.length, m: allMembers.length }), enabled: false }]
+      : []),
     { label: T("tray.friendCode", { c: myCode() }), enabled: false },
     { type: "separator" },
     {

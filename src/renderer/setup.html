@@ -20,38 +20,20 @@
       <input id="nickname" type="text" maxlength="20" autocomplete="off" />
     </label>
 
-    <label>
+    <div class="field">
       <span id="l-species"></span>
       <div id="species" class="colors"></div>
-    </label>
+    </div>
 
-    <label>
+    <div class="field">
       <span id="l-color"></span>
       <div id="colors" class="colors"></div>
-    </label>
+    </div>
 
     <label>
       <span id="l-room"></span>
       <input id="room" type="text" maxlength="40" autocomplete="off" />
       <small id="room-hint"></small>
-    </label>
-
-    <label>
-      <span id="l-mycode"></span>
-      <div class="row">
-        <input id="mycode" type="text" readonly />
-        <button type="button" id="copy"></button>
-      </div>
-    </label>
-
-    <label>
-      <span id="l-friends"></span>
-      <div class="row">
-        <input id="friend-input" type="text" maxlength="12" autocomplete="off" />
-        <button type="button" id="friend-add"></button>
-      </div>
-      <ul id="friend-list" class="friend-list"></ul>
-      <small id="friends-hint"></small>
     </label>
 
     <fieldset class="options">
@@ -64,6 +46,22 @@
 
     <details class="advanced">
       <summary id="l-advanced"></summary>
+      <div class="field">
+        <span id="l-mycode"></span>
+        <div class="row">
+          <input id="mycode" type="text" readonly />
+          <button type="button" id="copy"></button>
+        </div>
+      </div>
+      <div class="field">
+        <span id="l-friends"></span>
+        <small id="friends-hint"></small>
+        <div class="row">
+          <input id="friend-input" type="text" maxlength="12" autocomplete="off" />
+          <button type="button" id="friend-add"></button>
+        </div>
+        <ul id="friend-list" class="friend-list"></ul>
+      </div>
       <label>
         <span id="l-serverUrl"></span>
         <input id="serverUrl" type="text" autocomplete="off" placeholder="https://xxxx.supabase.co" />

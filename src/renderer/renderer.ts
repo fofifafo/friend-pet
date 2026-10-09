@@ -225,7 +225,9 @@ class Pet {
 
   labelText(): string {
     const status = this.member.sharing ? tr(`cat.${this.member.category}`) : tr("label.private");
-    return this.isMe ? status : `${this.member.nickname} · ${status}`;
+    const icon = this.member.sharing ? CATEGORY_POSE[this.member.category]?.icon ?? "" : "";
+    const withIcon = icon ? `${icon} ${status}` : status;
+    return this.isMe ? withIcon : `${this.member.nickname} · ${withIcon}`;
   }
 
   setMember(m: MemberState): void {
@@ -441,12 +443,6 @@ class Pet {
     }
     ctx.restore();
 
-    // 상태 아이콘 생각풍선
-    const pose = CATEGORY_POSE[this.category];
-    if (this.state === "pose" && pose && pose.icon && !this.oneShot && !this.bubble) {
-      drawThought(px + (this.dir === 1 ? SIZE * 0.78 : SIZE * 0.22), py + 10, pose.icon);
-    }
-
     let top = py + 2;
     if (this.bubble) top = drawBubble(px + SIZE / 2, top, this.bubble.text) - 4;
     if (showLabel) drawLabel(px + SIZE / 2, top, this.labelText());
@@ -491,7 +487,7 @@ const labelRects: { x: number; y: number; w: number; h: number }[] = [];
 /** 캐릭터 머리 위 라벨. bottom 은 라벨 아래쪽 y. 반환값은 라벨 위쪽 y. 다른 라벨과 겹치면 위로 올린다. */
 function drawLabel(cx: number, bottom: number, text: string): number {
   if (!text) return bottom;
-  ctx.font = "12px 'Malgun Gothic', 'Segoe UI', 'Yu Gothic UI', sans-serif";
+  ctx.font = "12px 'Malgun Gothic', 'Segoe UI', 'Yu Gothic UI', 'Segoe UI Emoji', sans-serif";
   ctx.textBaseline = "middle";
   const w = ctx.measureText(text).width + 14;
   const h = 19;
