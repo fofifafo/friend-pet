@@ -29,6 +29,7 @@ npm rebuild electron
 
 - `npm run dev`: 개발자 도구를 함께 띄웁니다.
 - `npm start -- --category=coding`: 활동 감지 대신 지정한 카테고리로 고정합니다 (포즈 확인용).
+- `npm start -- --profile=test`: 별도 설정 폴더(`%APPDATA%riend-pet-test`)로 실행합니다. 같은 PC 에서 두 번째 사용자로 띄워 연결을 시험할 때 씁니다.
 - `npm run dist`: 설치 파일(NSIS)과 포터블 exe 를 `release/` 에 만듭니다.
 
 ## 친구와 연결하기

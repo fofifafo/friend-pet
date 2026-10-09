@@ -22,6 +22,13 @@ const isDev = process.argv.includes("--dev");
 // 테스트용: --category=coding 처럼 주면 감지 결과 대신 이 카테고리를 쓴다.
 const forcedCategory = process.argv.find((a) => a.startsWith("--category="))?.split("=")[1] as Category | undefined;
 
+// 테스트용: --profile=이름 을 주면 별도 설정/로그 폴더(friend-pet-이름)를 쓴다.
+// 같은 PC 에서 두 번째 인스턴스를 다른 사용자로 띄울 때 사용한다.
+const profile = process.argv.find((a) => a.startsWith("--profile="))?.split("=")[1];
+if (profile) {
+  app.setPath("userData", path.join(app.getPath("appData"), `friend-pet-${profile}`));
+}
+
 let myCategory: Category = "unknown";
 let mySince = new Date().toISOString();
 
@@ -222,11 +229,15 @@ async function startTransport(): Promise<void> {
   }
 
   transport.on("friends", (members: MemberState[]) => {
+    if (members.length !== friends.length) {
+      log(`friends: ${members.length} (${members.map((m) => m.nickname).join(", ") || "-"})`);
+    }
     friends = members;
     refreshTray();
     send("friends-update", members);
   });
   transport.on("chat", (msg: ChatMessage) => {
+    log(`chat from ${msg.fromName} (${msg.text.length}자)`);
     history.push(msg);
     if (history.length > HISTORY_MAX) history = history.slice(-HISTORY_MAX);
     send("chat-message", msg);
