@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self'; script-src 'self'" />
+  <title>친구 펫</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <canvas id="stage"></canvas>
+
+  <div id="panel" class="hidden">
+    <div class="panel-head">
+      <span id="panel-name"></span>
+      <button id="panel-close" title="닫기">×</button>
+    </div>
+    <div id="panel-status" class="panel-status"></div>
+    <div id="panel-meta" class="panel-meta"></div>
+    <div id="panel-actions" class="panel-actions"></div>
+    <div id="panel-log" class="panel-log"></div>
+    <form id="panel-form" class="panel-form" autocomplete="off">
+      <input id="panel-input" type="text" maxlength="200" placeholder="메시지 보내기…" />
+      <button id="panel-send" type="submit">보내기</button>
+    </form>
+  </div>
+
+  <script src="renderer.js"></script>
+</body>
+</html>

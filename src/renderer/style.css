@@ -1,0 +1,138 @@
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: transparent;
+  user-select: none;
+  font-family: "Malgun Gothic", "Segoe UI", sans-serif;
+  font-size: 13px;
+}
+#stage {
+  display: block;
+  width: 100%;
+  height: 100%;
+  image-rendering: pixelated;
+}
+
+/* ---------- 상세 패널 ---------- */
+#panel {
+  position: absolute;
+  width: 240px;
+  background: rgba(28, 30, 36, 0.94);
+  color: #f2f2f2;
+  border-radius: 10px;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.45);
+  padding: 10px 12px 12px;
+  box-sizing: border-box;
+}
+#panel.hidden {
+  display: none;
+}
+.panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-weight: bold;
+  font-size: 14px;
+}
+#panel-close {
+  background: none;
+  border: none;
+  color: #aaa;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 2px;
+}
+#panel-close:hover {
+  color: #fff;
+}
+.panel-status {
+  margin-top: 4px;
+  color: #ffd48a;
+}
+.panel-meta {
+  color: #9aa0a8;
+  font-size: 12px;
+  margin-top: 2px;
+}
+.panel-actions {
+  margin-top: 6px;
+}
+.panel-actions button {
+  background: #3a3f4b;
+  border: none;
+  color: #eee;
+  border-radius: 6px;
+  padding: 4px 8px;
+  cursor: pointer;
+  font-size: 12px;
+}
+.panel-actions button:hover {
+  background: #4a5061;
+}
+.panel-log {
+  margin-top: 8px;
+  max-height: 120px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 12px;
+}
+.panel-log:empty {
+  display: none;
+}
+.msg {
+  padding: 4px 8px;
+  border-radius: 8px;
+  max-width: 90%;
+  word-break: break-word;
+  user-select: text;
+}
+.msg.mine {
+  align-self: flex-end;
+  background: #2f6fed;
+}
+.msg.theirs {
+  align-self: flex-start;
+  background: #3a3f4b;
+}
+.msg .who {
+  color: #9aa0a8;
+  font-size: 11px;
+  margin-right: 4px;
+}
+.panel-form {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+}
+#panel-input {
+  flex: 1;
+  min-width: 0;
+  background: #1a1c22;
+  border: 1px solid #444;
+  color: #fff;
+  border-radius: 6px;
+  padding: 5px 8px;
+  font-size: 13px;
+  user-select: text;
+}
+#panel-input:focus {
+  outline: none;
+  border-color: #2f6fed;
+}
+#panel-send {
+  background: #2f6fed;
+  border: none;
+  color: #fff;
+  border-radius: 6px;
+  padding: 5px 10px;
+  cursor: pointer;
+}
+#panel-send:hover {
+  background: #3d7cf5;
+}
