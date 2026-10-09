@@ -8,6 +8,12 @@ export const LANG_NAMES: Record<Lang, string> = { ko: "한국어", en: "English"
 export type Dict = Record<string, string>;
 
 const ko: Dict = {
+  "tray.checkUpdate": "업데이트 확인",
+  "update.available": "새 버전 {v} 을 받는 중입니다. 다음 실행 때 적용됩니다.",
+  "update.ready": "새 버전 {v} 준비 완료. 지금 다시 시작할까요?",
+  "update.none": "최신 버전입니다.",
+  "update.restart": "다시 시작",
+  "update.later": "나중에",
   "tray.filtered": "친구 목록 필터: 방 {m}명 중 {n}명 표시 (설정 → 고급 설정에서 해제)",
   "setup.species": "캐릭터 종류",
   "species.cat": "고양이",
@@ -111,6 +117,12 @@ const ko: Dict = {
 };
 
 const en: Dict = {
+  "tray.checkUpdate": "Check for updates",
+  "update.available": "Downloading version {v}. It will be applied on next launch.",
+  "update.ready": "Version {v} is ready. Restart now?",
+  "update.none": "You are on the latest version.",
+  "update.restart": "Restart",
+  "update.later": "Later",
   "tray.filtered": "Friend list filter: showing {n} of {m} in room (clear in Settings → Advanced)",
   "setup.species": "Character",
   "species.cat": "Cat",
@@ -214,6 +226,12 @@ const en: Dict = {
 };
 
 const ja: Dict = {
+  "tray.checkUpdate": "アップデートを確認",
+  "update.available": "バージョン {v} をダウンロード中です。次回起動時に適用されます。",
+  "update.ready": "バージョン {v} の準備ができました。今すぐ再起動しますか？",
+  "update.none": "最新バージョンです。",
+  "update.restart": "再起動",
+  "update.later": "あとで",
   "tray.filtered": "フレンドリスト絞り込み: ルーム{m}人中{n}人を表示 (設定 → 詳細設定で解除)",
   "setup.species": "キャラクター",
   "species.cat": "ねこ",

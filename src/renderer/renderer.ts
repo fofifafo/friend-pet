@@ -434,6 +434,7 @@ class Pet {
     const px = Math.round(this.x);
     const py = Math.round(this.y) + yOff * SCALE;
     ctx.save();
+    if (!this.isMe && connStatus === "offline") ctx.globalAlpha = 0.55;
     if (this.dir === -1) {
       ctx.translate(px + SIZE, py);
       ctx.scale(-1, 1);

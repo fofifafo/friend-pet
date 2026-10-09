@@ -15,6 +15,16 @@ export class SupabaseTransport extends EventEmitter implements Transport {
   private heartbeat: NodeJS.Timeout | null = null;
   private reconnectTimer: NodeJS.Timeout | null = null;
   private friendsTimer: NodeJS.Timeout | null = null;
+  /** 잠깐 사라진 멤버를 바로 지우지 않기 위한 마지막 목격 시각 */
+  private lastSeen = new Map<string, { member: MemberState; at: number }>();
+  private graceTimer: NodeJS.Timeout | null = null;
+  private offlineClearTimer: NodeJS.Timeout | null = null;
+  /** 상태 전송 묶기 */
+  private lastTrackAt = 0;
+  private trackTimer: NodeJS.Timeout | null = null;
+  private static readonly LEAVE_GRACE_MS = 5_000;
+  private static readonly OFFLINE_KEEP_MS = 90_000;
+  private static readonly TRACK_MIN_INTERVAL_MS = 8_000;
   private reconnectDelay = 5_000;
   private closed = false;
   private _status: ConnectionStatus = "connecting";
@@ -48,11 +58,11 @@ export class SupabaseTransport extends EventEmitter implements Transport {
 
     this.joinChannel();
 
-    // 60초마다 lastActive 를 갱신해 오래된 presence 를 구분할 수 있게 한다.
+    // 5분마다 lastActive 를 갱신한다 (너무 잦으면 상대 화면이 깜빡인다).
     this.heartbeat = setInterval(() => {
       this.me = { ...this.me, lastActive: new Date().toISOString() };
       void this.track();
-    }, 60_000);
+    }, 5 * 60_000);
   }
 
   /** 채널에 들어간다. 끊기면 지수 백오프로 다시 들어간다. */
@@ -88,12 +98,25 @@ export class SupabaseTransport extends EventEmitter implements Transport {
       if (status === "SUBSCRIBED") {
         this.subscribed = true;
         this.reconnectDelay = 5_000;
+        if (this.offlineClearTimer) {
+          clearTimeout(this.offlineClearTimer);
+          this.offlineClearTimer = null;
+        }
         await this.track();
         this.setStatus("online");
       } else if (status === "CLOSED" || status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
         this.subscribed = false;
         this.setStatus("offline");
-        this.emit("friends", []);
+        // 친구 목록은 바로 비우지 않고, 오래 못 붙으면 그때 비운다.
+        if (!this.offlineClearTimer) {
+          this.offlineClearTimer = setTimeout(() => {
+            this.offlineClearTimer = null;
+            if (!this.subscribed) {
+              this.lastSeen.clear();
+              this.emit("friends", []);
+            }
+          }, SupabaseTransport.OFFLINE_KEEP_MS);
+        }
         this.scheduleReconnect();
       }
     });
@@ -131,11 +154,14 @@ export class SupabaseTransport extends EventEmitter implements Transport {
   private emitFriends(): void {
     if (!this.channel) return;
     const state = this.channel.presenceState<MemberState>();
+    const now = Date.now();
     const members: MemberState[] = [];
+    const present = new Set<string>();
     for (const [key, entries] of Object.entries(state)) {
       if (key === this.me.userId) continue;
       const latest = entries[entries.length - 1];
       if (!latest || !latest.userId) continue;
+      present.add(latest.userId);
       members.push({
         userId: latest.userId,
         code: String(latest.code ?? latest.userId.slice(0, 8)),
@@ -148,6 +174,24 @@ export class SupabaseTransport extends EventEmitter implements Transport {
         since: latest.since,
         lastActive: latest.lastActive,
       });
+    }
+    for (const m of members) this.lastSeen.set(m.userId, { member: m, at: now });
+    // presence 갱신은 leave 와 join 이 따로 올 수 있다. 방금까지 있던 사람은 잠시 유지한다.
+    let needRecheck = false;
+    for (const [id, seen] of this.lastSeen) {
+      if (present.has(id)) continue;
+      if (now - seen.at < SupabaseTransport.LEAVE_GRACE_MS) {
+        members.push(seen.member);
+        needRecheck = true;
+      } else {
+        this.lastSeen.delete(id);
+      }
+    }
+    if (needRecheck && !this.graceTimer) {
+      this.graceTimer = setTimeout(() => {
+        this.graceTimer = null;
+        this.emitFriends();
+      }, SupabaseTransport.LEAVE_GRACE_MS + 200);
     }
     this.emit("friends", members);
   }
@@ -163,7 +207,18 @@ export class SupabaseTransport extends EventEmitter implements Transport {
 
   async publish(state: MemberState): Promise<void> {
     this.me = state;
-    await this.track();
+    // 활동이 자주 바뀌어도 몇 초에 한 번만 보낸다 (상대 화면 깜빡임 방지).
+    const elapsed = Date.now() - this.lastTrackAt;
+    if (elapsed >= SupabaseTransport.TRACK_MIN_INTERVAL_MS) {
+      this.lastTrackAt = Date.now();
+      await this.track();
+    } else if (!this.trackTimer) {
+      this.trackTimer = setTimeout(() => {
+        this.trackTimer = null;
+        this.lastTrackAt = Date.now();
+        void this.track();
+      }, SupabaseTransport.TRACK_MIN_INTERVAL_MS - elapsed);
+    }
   }
 
   async sendChat(msg: ChatMessage): Promise<void> {
@@ -177,6 +232,9 @@ export class SupabaseTransport extends EventEmitter implements Transport {
     if (this.heartbeat) clearInterval(this.heartbeat);
     if (this.reconnectTimer) clearTimeout(this.reconnectTimer);
     if (this.friendsTimer) clearTimeout(this.friendsTimer);
+    if (this.graceTimer) clearTimeout(this.graceTimer);
+    if (this.offlineClearTimer) clearTimeout(this.offlineClearTimer);
+    if (this.trackTimer) clearTimeout(this.trackTimer);
     if (this.channel) {
       try {
         await this.channel.untrack();

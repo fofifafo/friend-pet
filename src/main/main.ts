@@ -1,4 +1,5 @@
-import { app, BrowserWindow, ipcMain, Menu, Tray, nativeImage, screen, shell } from "electron";
+import { app, BrowserWindow, dialog, ipcMain, Menu, Tray, nativeImage, screen, shell } from "electron";
+import { autoUpdater } from "electron-updater";
 import * as path from "path";
 import * as fs from "fs";
 import { randomUUID } from "crypto";
@@ -385,6 +386,56 @@ async function applySetup(v: SetupValues): Promise<{ ok: boolean; error?: string
   return { ok: true };
 }
 
+// ---------- 자동 업데이트 (GitHub Releases) ----------
+let updateReadyVersion: string | null = null;
+function setupAutoUpdate(): void {
+  if (!app.isPackaged) return;
+  autoUpdater.autoDownload = true;
+  autoUpdater.autoInstallOnAppQuit = true;
+  autoUpdater.logger = { info: (m: unknown) => log(`update: ${m}`), warn: (m: unknown) => log(`update: ${m}`), error: (m: unknown) => log(`update: ${m}`), debug: () => {} } as never;
+  autoUpdater.on("update-available", (info) => log(`update available: ${info.version}`));
+  autoUpdater.on("update-downloaded", (info) => {
+    updateReadyVersion = info.version;
+    log(`update downloaded: ${info.version}`);
+    refreshTray();
+    void dialog
+      .showMessageBox({
+        type: "info",
+        title: T("setup.title"),
+        message: T("update.ready", { v: info.version }),
+        buttons: [T("update.restart"), T("update.later")],
+        defaultId: 0,
+        cancelId: 1,
+      })
+      .then((r) => {
+        if (r.response === 0) autoUpdater.quitAndInstall();
+      });
+  });
+  autoUpdater.on("error", (e) => log(`update error: ${e.message}`));
+  void autoUpdater.checkForUpdates().catch((e) => log(`update check failed: ${(e as Error).message}`));
+  // 6시간마다 다시 확인
+  setInterval(() => void autoUpdater.checkForUpdates().catch(() => undefined), 6 * 3600 * 1000);
+}
+
+async function checkUpdateManually(): Promise<void> {
+  if (!app.isPackaged) return;
+  if (updateReadyVersion) {
+    autoUpdater.quitAndInstall();
+    return;
+  }
+  try {
+    const r = await autoUpdater.checkForUpdates();
+    const v = r?.updateInfo?.version;
+    if (v && v !== app.getVersion()) {
+      void dialog.showMessageBox({ type: "info", title: T("setup.title"), message: T("update.available", { v }) });
+    } else {
+      void dialog.showMessageBox({ type: "info", title: T("setup.title"), message: T("update.none") });
+    }
+  } catch (e) {
+    log(`update check failed: ${(e as Error).message}`);
+  }
+}
+
 // ---------- 트레이 ----------
 function buildTrayMenu(): Menu {
   return Menu.buildFromTemplate([
@@ -421,6 +472,10 @@ function buildTrayMenu(): Menu {
     {
       label: T("tray.openConfig"),
       click: () => void shell.openPath(path.join(app.getPath("userData"), "config.json")),
+    },
+    {
+      label: updateReadyVersion ? `${T("update.restart")} (${updateReadyVersion})` : `${T("tray.checkUpdate")} (v${app.getVersion()})`,
+      click: () => void checkUpdateManually(),
     },
     { type: "separator" },
     { label: T("tray.quit"), click: () => app.quit() },
@@ -614,6 +669,7 @@ app.whenReady().then(async () => {
   createTray();
   startWatcher();
   applyAutostart();
+  setupAutoUpdate();
   await startTransport();
   if (!config.setupDone || forceSetup) openSetupWindow();
 }).catch((e) => log(`startup failed: ${(e as Error).stack ?? e}`));
