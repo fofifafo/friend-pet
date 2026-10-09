@@ -71,8 +71,8 @@ class Canvas:
         return ["".join(r) for r in self.g]
 
 
-def finish_part(c, light=True):
-    """부위 캔버스에 외곽선(d)과 명암(l/a)을 입힌다. 'o' 로 칠한 부분만 대상."""
+def finish_part(c, light=True, outline="d", fills=("o", "w", "a", "l")):
+    """부위 캔버스에 외곽선과 명암(l/a)을 입힌다. fills 에 있는 문자로 칠한 부분만 대상."""
     src = [row[:] for row in c.g]
 
     def filled(x, y):
@@ -84,8 +84,8 @@ def finish_part(c, light=True):
             if ch == ".":
                 continue
             edge = not (filled(x - 1, y) and filled(x + 1, y) and filled(x, y - 1) and filled(x, y + 1))
-            if edge and ch in ("o", "w", "a", "l"):
-                c.g[y][x] = "d"
+            if edge and ch in fills:
+                c.g[y][x] = outline
             elif ch == "o" and light:
                 # 위쪽/왼쪽이 외곽선이면 밝게, 아래쪽이 외곽선이면 어둡게
                 up_edge = not (filled(x, y - 2) and filled(x - 1, y - 1))
@@ -411,6 +411,61 @@ def draw_markings(sp, hx, hy, pose):
     return c
 
 
+def draw_prop(kind, frame):
+    """활동 소품. 캐릭터 앞(오른쪽)에 그린다."""
+    c = part()
+    if kind == "laptop":
+        dev = part()
+        dev.rect(22, 17, 30, 25, "s")          # 화면 테두리
+        dev.rect(23, 18, 29, 24, "b")          # 화면
+        dev.rect(21, 26, 31, 28, "s")          # 본체
+        finish_part(dev, light=False, outline="q", fills=("s", "n", "b", "y", "a"))
+        c.merge(dev)
+        for i, (x, y) in enumerate([(24, 19), (26, 19), (24, 21), (27, 21), (25, 23)]):
+            c.put(x, y, "w" if (i + frame) % 2 == 0 else "b")   # 코드 줄
+        c.rect(23, 27, 29, 27, "a")            # 키보드
+        # 두드리는 앞발 (번갈아)
+        px = 23 if frame % 2 == 0 else 27
+        paw = part(); paw.rect(px, 24, px + 1, 26, "o"); finish_part(paw, light=False); c.merge(paw)
+    elif kind == "gamepad":
+        dy = 0 if frame % 2 == 0 else 1
+        dev = part(); dev.rect(20, 21 + dy, 28, 24 + dy, "s"); dev.rect(19, 22 + dy, 19, 23 + dy, "s"); dev.rect(29, 22 + dy, 29, 23 + dy, "s")
+        finish_part(dev, light=False, outline="q", fills=("s", "n", "b", "y", "a")); c.merge(dev)
+        c.put(21, 22 + dy, "k"); c.put(22, 21 + dy, "k"); c.put(22, 23 + dy, "k"); c.put(23, 22 + dy, "k")   # 십자키
+        c.put(26, 22 + dy, "e"); c.put(27, 23 + dy, "x")                                                     # 버튼
+        for x in (18, 29):
+            paw = part(); paw.rect(x, 22 + dy, x + 1, 24 + dy, "o"); finish_part(paw, light=False); c.merge(paw)
+    elif kind == "tv":
+        dev = part()
+        dev.rect(23, 16, 31, 27, "s")
+        dev.rect(24, 17, 30, 25, "b")
+        dev.rect(26, 28, 28, 28, "s")
+        dev.rect(25, 29, 29, 29, "s")
+        finish_part(dev, light=False, outline="q", fills=("s", "n", "b", "y", "a"))
+        c.merge(dev)
+        pts = [(25, 18), (27, 20), (29, 22), (26, 23)] if frame % 2 == 0 else [(28, 18), (25, 21), (29, 19), (27, 24)]
+        for x, y in pts:
+            c.put(x, y, "w")
+    elif kind == "book":
+        dev = part()
+        dev.rect(19, 24, 30, 28, "y")          # 표지
+        dev.rect(20, 23, 29, 27, "w")          # 페이지
+        finish_part(dev, light=False, outline="q", fills=("y", "w")); c.merge(dev)
+        c.rect(24, 23, 24, 27, "a")            # 가운데
+        for y in (24, 25, 26):
+            if (y + frame) % 2 == 0:
+                c.rect(21, y, 23, y, "a"); c.rect(26, y, 28, y, "a")
+        for x in (19, 30):
+            paw = part(); paw.rect(x, 26, x + 1, 28, "o"); finish_part(paw, light=False); c.merge(paw)
+    elif kind == "phone":
+        dy = 0 if frame % 2 == 0 else -1
+        dev = part(); dev.rect(24, 15 + dy, 27, 21 + dy, "n"); finish_part(dev, light=False, outline="q", fills=("s", "n", "b", "y", "a")); c.merge(dev)
+        c.rect(25, 16 + dy, 26, 20 + dy, "b")
+        c.put(25, 17 + dy, "w"); c.put(26, 19 + dy, "w")
+        paw = part(); paw.rect(23, 20 + dy, 24, 22 + dy, "o"); finish_part(paw, light=False); c.merge(paw)
+    return c
+
+
 def draw_effect(kind, frame):
     c = part()
     if kind == "heart":
@@ -442,8 +497,20 @@ def draw_effect(kind, frame):
 
 
 def render(sp, pose="stand", frame=0, eyes="open", tail_phase=0, bob=0, effect=None, effect_frame=0,
-           wave=False, highfive=False, tilt_x=0, tilt_y=0, blush=False, ear_tilt=0):
+           wave=False, highfive=False, tilt_x=0, tilt_y=0, blush=False, ear_tilt=0, prop=None, prop_frame=0, shift_x=0):
     """하나의 프레임을 만든다."""
+    if shift_x:
+        rows = render(sp, pose, frame, eyes, tail_phase, bob, None, 0, wave, highfive, tilt_x, tilt_y, blush, ear_tilt)
+        n = -shift_x
+        rows = [r[n:] + "." * n for r in rows]
+        main = Canvas()
+        for y, r in enumerate(rows):
+            main.g[y] = list(r)
+        if prop:
+            main.merge(draw_prop(prop, prop_frame))
+        if effect:
+            main.merge(draw_effect(effect, effect_frame))
+        return main.rows()
     main = Canvas()
     main.merge(draw_tail(sp, pose, tail_phase))
     body, (hx, hy), _ = draw_main(sp, pose, frame, bob, wave, highfive, tilt_x, tilt_y, ear_tilt)
@@ -453,6 +520,8 @@ def render(sp, pose="stand", frame=0, eyes="open", tail_phase=0, bob=0, effect=N
     main.merge(draw_markings(sp, hx, hy, pose))
     main.merge(draw_ears_front(sp, hx, hy))
     main.merge(draw_face(sp, hx, hy, eyes, "blush" if blush else None))
+    if prop:
+        main.merge(draw_prop(prop, prop_frame))
     if effect:
         main.merge(draw_effect(effect, effect_frame))
     return main.rows()
@@ -523,6 +592,26 @@ def anim_frames(sp):
     A["sweat"] = dict(ms=300, frames=[
         dict(eyes="blink", effect="sweat", effect_frame=0, tilt_y=1), dict(eyes="open", effect="sweat", effect_frame=1, tilt_y=1),
     ])
+    A["coding"] = dict(ms=170, frames=[
+        dict(pose="sit", prop="laptop", prop_frame=0, tail_phase=2), dict(pose="sit", prop="laptop", prop_frame=1, tail_phase=2),
+        dict(pose="sit", prop="laptop", prop_frame=0, tail_phase=1), dict(pose="sit", prop="laptop", prop_frame=1, tail_phase=2, eyes="blink"),
+    ])
+    A["gaming"] = dict(ms=200, frames=[
+        dict(pose="sit", prop="gamepad", prop_frame=0, tail_phase=0), dict(pose="sit", prop="gamepad", prop_frame=1, tail_phase=1),
+        dict(pose="sit", prop="gamepad", prop_frame=0, tail_phase=2, eyes="wow"), dict(pose="sit", prop="gamepad", prop_frame=1, tail_phase=1),
+    ])
+    A["watching"] = dict(ms=420, frames=[
+        dict(pose="lie", prop="tv", prop_frame=0, shift_x=-5), dict(pose="lie", prop="tv", prop_frame=1, shift_x=-5),
+        dict(pose="lie", prop="tv", prop_frame=0, shift_x=-5, eyes="blink"), dict(pose="lie", prop="tv", prop_frame=1, shift_x=-5),
+    ])
+    A["reading"] = dict(ms=800, frames=[
+        dict(pose="sit", prop="book", prop_frame=0, tail_phase=2), dict(pose="sit", prop="book", prop_frame=1, tail_phase=2),
+        dict(pose="sit", prop="book", prop_frame=0, tail_phase=1, eyes="blink"),
+    ])
+    A["phone"] = dict(ms=420, frames=[
+        dict(pose="sit", prop="phone", prop_frame=0, tail_phase=1), dict(pose="sit", prop="phone", prop_frame=1, tail_phase=2, eyes="happy"),
+        dict(pose="sit", prop="phone", prop_frame=0, tail_phase=1), dict(pose="sit", prop="phone", prop_frame=1, tail_phase=0),
+    ])
     A["sittogether"] = dict(ms=800, frames=[
         dict(pose="sit", eyes="happy", tail_phase=1, blush=True), dict(pose="sit", eyes="happy", tail_phase=2, blush=True), dict(pose="sit", eyes="blink", tail_phase=1, blush=True),
     ])
@@ -579,7 +668,7 @@ PALETTES = {
     "penguin": {"o": "#34455a", "l": "#4c6079", "a": "#243242", "d": "#111a24", "w": "#ffffff", "m": "#2b2b2b"},
     "fox": {"o": "#f08a3c", "l": "#ffb270", "a": "#c9671f", "d": "#7d3e12", "w": "#fff7ea", "m": "#3a2a2a"},
 }
-COMMON = {"k": "#2b2b2b", "h": "#ffffff", "p": "#ff9fb3", "y": "#f2a63a", "z": "#8fb4ff", "e": "#ff6b8a", "x": "#ffd43b", "c": "#7cc8ff"}
+COMMON = {"k": "#2b2b2b", "h": "#ffffff", "p": "#ff9fb3", "y": "#f2a63a", "z": "#8fb4ff", "e": "#ff6b8a", "x": "#ffd43b", "c": "#7cc8ff", "s": "#555c66", "b": "#5ab0ff", "n": "#1e2a3a", "q": "#262b35"}
 
 
 def hexrgb(h):
@@ -630,6 +719,10 @@ if __name__ == "__main__":
         render_sheet(os.path.join(outdir, "v3_walk.png"), [(sp, data[sp]["walk"]["frames"][1]) for sp in SPECIES])
         render_sheet(os.path.join(outdir, "v3_sit.png"), [(sp, data[sp]["sit"]["frames"][0]) for sp in SPECIES])
         render_sheet(os.path.join(outdir, "v3_sleep.png"), [(sp, data[sp]["sleep"]["frames"][0]) for sp in SPECIES])
+        render_sheet(os.path.join(outdir, "v3_props.png"), [
+            ("cat", data["cat"]["coding"]["frames"][0]), ("dog", data["dog"]["gaming"]["frames"][0]), ("rabbit", data["rabbit"]["watching"]["frames"][0]),
+            ("bear", data["bear"]["reading"]["frames"][0]), ("fox", data["fox"]["phone"]["frames"][1]), ("penguin", data["penguin"]["coding"]["frames"][1]),
+        ])
         render_sheet(os.path.join(outdir, "v3_cat_walk.png"), [("cat", f) for f in data["cat"]["walk"]["frames"]] + [("dog", f) for f in data["dog"]["walk"]["frames"]])
         render_sheet(os.path.join(outdir, "v3_cat_anims.png"), [("cat", data["cat"][n]["frames"][0]) for n in ["happy", "wave", "highfive", "nuzzle", "dance", "surprised", "love", "groom", "stretch", "sweat"]])
         render_sheet(os.path.join(outdir, "v3_dog_anims.png"), [("dog", data["dog"][n]["frames"][0]) for n in ["happy", "wave", "highfive", "nuzzle", "dance", "surprised", "love", "groom", "stretch", "sweat"]])

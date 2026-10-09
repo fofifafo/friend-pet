@@ -78,7 +78,7 @@ const SPECIES_NOSE: Record<string, string> = {
   cat: "#4a2c2a", dog: "#2b2b2b", rabbit: "#f48aa4", bear: "#2b2b2b", penguin: "#2b2b2b", fox: "#3a2a2a",
 };
 const COMMON_PALETTE: Record<string, string> = {
-  w: "#fff7ea", k: "#2b2b2b", h: "#ffffff", p: "#ff9fb3", y: "#f2a63a", z: "#8fb4ff", e: "#ff6b8a", x: "#ffd43b", c: "#7cc8ff",
+  w: "#fff7ea", k: "#2b2b2b", h: "#ffffff", p: "#ff9fb3", y: "#f2a63a", z: "#8fb4ff", e: "#ff6b8a", x: "#ffd43b", c: "#7cc8ff", s: "#555c66", b: "#5ab0ff", n: "#1e2a3a", q: "#262b35",
 };
 
 function paletteFor(species: string, color: string): Record<string, string> {
@@ -133,11 +133,11 @@ function getAnimSet(species: string, color: string): AnimSet {
 
 // 카테고리 → 포즈 애니메이션과 아이콘
 const CATEGORY_POSE: Record<string, { anim: string; icon: string }> = {
-  coding: { anim: "sit", icon: "💻" },
-  game: { anim: "sit", icon: "🎮" },
-  video: { anim: "lie", icon: "📺" },
-  document: { anim: "sit", icon: "📄" },
-  chat: { anim: "idle", icon: "💬" },
+  coding: { anim: "coding", icon: "💻" },
+  game: { anim: "gaming", icon: "🎮" },
+  video: { anim: "watching", icon: "📺" },
+  document: { anim: "reading", icon: "📄" },
+  chat: { anim: "phone", icon: "💬" },
   away: { anim: "sleep", icon: "" },
 };
 
@@ -271,7 +271,7 @@ class Pet {
   private pickNextState(now: number): void {
     const pose = CATEGORY_POSE[this.category];
     if (pose && this.category === "away") return this.setState("pose", pose.anim, 15000, now);
-    if (pose && Math.random() < 0.7) return this.setState("pose", pose.anim, 6000 + Math.random() * 10000, now);
+    if (pose && Math.random() < 0.85) return this.setState("pose", pose.anim, 8000 + Math.random() * 12000, now);
     const r = Math.random();
     if (r < 0.35) {
       this.dir = Math.random() < 0.5 ? 1 : -1;

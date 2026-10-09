@@ -60,7 +60,7 @@ const SETUP_NOSE: Record<string, string> = {
   cat: "#4a2c2a", dog: "#2b2b2b", rabbit: "#f48aa4", bear: "#2b2b2b", penguin: "#2b2b2b", fox: "#3a2a2a",
 };
 const SETUP_COMMON: Record<string, string> = {
-  w: "#fff7ea", k: "#2b2b2b", h: "#ffffff", p: "#ff9fb3", y: "#f2a63a", z: "#8fb4ff", e: "#ff6b8a", x: "#ffd43b", c: "#7cc8ff",
+  w: "#fff7ea", k: "#2b2b2b", h: "#ffffff", p: "#ff9fb3", y: "#f2a63a", z: "#8fb4ff", e: "#ff6b8a", x: "#ffd43b", c: "#7cc8ff", s: "#555c66", b: "#5ab0ff", n: "#1e2a3a", q: "#262b35",
 };
 
 function setupPalette(species: string, color: string): Record<string, string> {
