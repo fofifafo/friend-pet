@@ -1,27 +1,23 @@
 // 서버 없이 테스트하기 위한 가짜 친구 전송 계층.
-// Supabase 설정이 비어 있으면 자동으로 이 모드로 실행된다.
+// 설정에서 데모 모드를 켜면 이 모드로 실행된다.
 import { EventEmitter } from "events";
 import type { Category } from "../classifier";
 import type { ChatMessage, ConnectionStatus, MemberState, Transport } from "./transport";
 
 const CYCLE: Category[] = ["coding", "browsing", "game", "video", "document", "chat", "away"];
 
-const REPLIES = [
-  "ㅋㅋㅋ 뭐해",
-  "나 지금 바빠 ㅠ",
-  "오 좋은데?",
-  "이따 같이 할래?",
-  "잠깐만 이것만 끝내고",
-  "👍",
-  "밥 먹었어?",
-];
+export interface DemoTexts {
+  name1: string;
+  name2: string;
+  replies: string[];
+}
 
 export class DemoTransport extends EventEmitter implements Transport {
   private timers: NodeJS.Timeout[] = [];
   private friends: MemberState[] = [];
   private _status: ConnectionStatus = "demo";
 
-  constructor(private me: MemberState, private log: (line: string) => void) {
+  constructor(private me: MemberState, private texts: DemoTexts, private log: (line: string) => void) {
     super();
   }
 
@@ -29,11 +25,16 @@ export class DemoTransport extends EventEmitter implements Transport {
     return this._status;
   }
 
+  private reply(): string {
+    const r = this.texts.replies;
+    return r[Math.floor(Math.random() * r.length)] ?? "👍";
+  }
+
   async connect(): Promise<void> {
     const now = new Date().toISOString();
     this.friends = [
-      { userId: "demo-1", nickname: "데모 민수", color: "gray", category: "coding", sharing: true, since: now, lastActive: now },
-      { userId: "demo-2", nickname: "데모 지은", color: "pink", category: "video", sharing: true, since: now, lastActive: now },
+      { userId: "demo-1", code: "demo-1", friends: [], nickname: this.texts.name1, color: "gray", category: "coding", sharing: true, since: now, lastActive: now },
+      { userId: "demo-2", code: "demo-2", friends: [], nickname: this.texts.name2, color: "pink", category: "video", sharing: true, since: now, lastActive: now },
     ];
     this.log("demo transport: 가짜 친구 2명 접속");
     this.emit("status", "demo");
@@ -55,7 +56,7 @@ export class DemoTransport extends EventEmitter implements Transport {
     // 가끔 먼저 말을 건다.
     const greet = () => {
       const f = this.friends[Math.floor(Math.random() * this.friends.length)];
-      this.emit("chat", this.makeMessage(f, "all", REPLIES[Math.floor(Math.random() * REPLIES.length)]));
+      this.emit("chat", this.makeMessage(f, "all", this.reply()));
       this.timers.push(setTimeout(greet, 40_000 + Math.random() * 40_000));
     };
     this.timers.push(setTimeout(greet, 20_000));
@@ -81,7 +82,7 @@ export class DemoTransport extends EventEmitter implements Transport {
     const target = this.friends.find((f) => f.userId === msg.to) ?? this.friends[0];
     this.timers.push(
       setTimeout(() => {
-        this.emit("chat", this.makeMessage(target, this.me.userId, REPLIES[Math.floor(Math.random() * REPLIES.length)]));
+        this.emit("chat", this.makeMessage(target, this.me.userId, this.reply()));
       }, 2000),
     );
   }

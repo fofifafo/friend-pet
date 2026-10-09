@@ -10,6 +10,8 @@ interface ActivityPayload {
 }
 interface MemberState {
   userId: string;
+  code: string;
+  friends: string[];
   nickname: string;
   color: string;
   category: string;
@@ -25,13 +27,17 @@ interface ChatMessage {
   text: string;
   at: string;
 }
+interface LocalePayload {
+  lang: string;
+  dict: Record<string, string>;
+}
 interface InitData {
   me: MemberState;
   showLabel: boolean;
   status: string;
   friends: MemberState[];
   history: ChatMessage[];
-  labels: Record<string, string>;
+  locale: LocalePayload;
 }
 interface Window {
   petApi: {
@@ -45,6 +51,7 @@ interface Window {
     onFriends: (cb: (d: MemberState[]) => void) => void;
     onChat: (cb: (d: ChatMessage) => void) => void;
     onStatus: (cb: (d: string) => void) => void;
+    onLocale: (cb: (d: LocalePayload) => void) => void;
   };
 }
 
@@ -220,17 +227,32 @@ function getAnimSet(color: string): AnimSet {
 // ---------- 캔버스 ----------
 const canvas = document.getElementById("stage") as HTMLCanvasElement;
 const ctx = canvas.getContext("2d")!;
+let petsReady = false; // init() 이후 true. 그 전에는 캐릭터 목록이 아직 없다.
 function resize(): void {
   canvas.width = window.innerWidth;
   canvas.height = window.innerHeight;
   ctx.imageSmoothingEnabled = false;
+  // 해상도나 작업표시줄이 바뀌면 캐릭터가 화면 밖에 남지 않게 한다.
+  if (petsReady) {
+    for (const pet of allPets()) {
+      pet.x = Math.max(0, Math.min(canvas.width - SIZE, pet.x));
+      pet.y = Math.min(pet.y, canvas.height - SIZE);
+    }
+  }
 }
 window.addEventListener("resize", resize);
 resize();
 
 const WALK_SPEED = 60; // px/s
-let LABELS: Record<string, string> = {};
+let DICT: Record<string, string> = {};
 let showLabel = true;
+
+/** 사전 문자열 조회. {name} 자리표시자를 채운다. */
+function tr(key: string, params?: Record<string, string | number>): string {
+  let s = DICT[key] ?? key;
+  if (params) s = s.replace(/\{(\w+)\}/g, (_, k) => (k in params ? String(params[k]) : `{${k}}`));
+  return s;
+}
 
 // ---------- 캐릭터 ----------
 type State = "idle" | "walk" | "sit" | "pose";
@@ -263,7 +285,7 @@ class Pet {
   }
 
   labelText(): string {
-    const status = this.member.sharing ? LABELS[this.member.category] ?? "" : "비공개";
+    const status = this.member.sharing ? tr(`cat.${this.member.category}`) : tr("label.private");
     return this.isMe ? status : `${this.member.nickname} · ${status}`;
   }
 
@@ -438,6 +460,7 @@ function drawBubble(cx: number, bottom: number, text: string): number {
 
 // ---------- 월드 ----------
 let me: Pet | null = null;
+let dragPet: Pet | null = null;
 const friends = new Map<string, Pet>();
 let chatHistory: ChatMessage[] = [];
 let connStatus = "connecting";
@@ -450,17 +473,28 @@ function randomX(): number {
   return 80 + Math.random() * Math.max(100, canvas.width - 160);
 }
 
+// 최근에 사라진 친구의 위치. 접속이 잠깐 끊겼다 돌아오면 같은 자리에 둔다.
+const lastPositions = new Map<string, { x: number; at: number }>();
+
 function applyFriends(list: MemberState[]): void {
   const seen = new Set<string>();
   for (const m of list) {
     seen.add(m.userId);
     const existing = friends.get(m.userId);
-    if (existing) existing.setMember(m);
-    else friends.set(m.userId, new Pet(m, false, randomX()));
+    if (existing) {
+      existing.setMember(m);
+    } else {
+      const remembered = lastPositions.get(m.userId);
+      const x = remembered && performance.now() - remembered.at < 10 * 60_000 ? remembered.x : randomX();
+      friends.set(m.userId, new Pet(m, false, x));
+    }
   }
   for (const id of [...friends.keys()]) {
     if (!seen.has(id)) {
+      const pet = friends.get(id)!;
+      lastPositions.set(id, { x: pet.x, at: performance.now() });
       if (panelPet?.id === id) closePanel();
+      if (dragPet?.id === id) dragPet = null;
       friends.delete(id);
     }
   }
@@ -480,11 +514,11 @@ let panelPet: Pet | null = null;
 function relTime(iso: string): string {
   const diff = Math.max(0, Date.now() - new Date(iso).getTime());
   const m = Math.floor(diff / 60000);
-  if (m < 1) return "방금";
-  if (m < 60) return `${m}분 전`;
+  if (m < 1) return tr("time.now");
+  if (m < 60) return tr("time.min", { n: m });
   const h = Math.floor(m / 60);
-  if (h < 24) return `${h}시간 전`;
-  return `${Math.floor(h / 24)}일 전`;
+  if (h < 24) return tr("time.hour", { n: h });
+  return tr("time.day", { n: Math.floor(h / 24) });
 }
 
 function openPanel(pet: Pet): void {
@@ -512,28 +546,27 @@ function renderPanel(): void {
   const pet = panelPet;
   if (!pet) return;
   const m = pet.member;
-  panelName.textContent = pet.isMe && m.nickname !== "나" ? `${m.nickname} (나)` : m.nickname;
-  panelStatus.textContent = m.sharing ? LABELS[m.category] ?? m.category : "상태 비공개";
+  panelName.textContent = pet.isMe ? tr("panel.me", { name: m.nickname }) : m.nickname;
+  panelStatus.textContent = m.sharing ? tr(`cat.${m.category}`) : tr("panel.private");
   const metaParts: string[] = [];
-  if (m.sharing) metaParts.push(`${relTime(m.since)}부터`);
-  metaParts.push(`마지막 활동 ${relTime(m.lastActive)}`);
+  if (m.sharing) metaParts.push(tr("panel.since", { t: relTime(m.since) }));
+  metaParts.push(tr("panel.lastActive", { t: relTime(m.lastActive) }));
   if (pet.isMe) {
-    const conn =
-      connStatus === "online" ? "온라인" : connStatus === "demo" ? "데모 모드" : connStatus === "connecting" ? "연결 중" : "오프라인";
-    metaParts.push(`연결: ${conn}`);
+    metaParts.push(tr("panel.connection", { s: tr(`conn.${connStatus}`) }));
   }
   panelMeta.textContent = metaParts.join(" · ");
 
   panelActions.innerHTML = "";
   if (pet.isMe) {
     const btn = document.createElement("button");
-    btn.textContent = m.sharing ? "상태 공유 끄기 (투명 모드)" : "상태 공유 켜기";
+    btn.textContent = m.sharing ? tr("panel.shareOff") : tr("panel.shareOn");
     btn.addEventListener("click", () => window.petApi.toggleShare());
     panelActions.appendChild(btn);
-    panelInput.placeholder = "모두에게 보내기…";
+    panelInput.placeholder = tr("panel.toAll");
   } else {
-    panelInput.placeholder = `${m.nickname}에게 보내기…`;
+    panelInput.placeholder = tr("panel.toOne", { name: m.nickname });
   }
+  (document.getElementById("panel-send") as HTMLButtonElement).textContent = tr("panel.send");
 
   panelLog.innerHTML = "";
   const myId = me?.id;
@@ -582,7 +615,7 @@ panelForm.addEventListener("submit", async (e) => {
   panelInput.value = "";
   const res = await window.petApi.sendChat(to, text);
   if (!res.ok) {
-    me?.say(`전송 실패: ${res.error ?? ""}`);
+    me?.say(tr("panel.sendFail", { e: res.error ?? "" }));
   }
 });
 window.addEventListener("keydown", (e) => {
@@ -624,7 +657,6 @@ function petAt(mx: number, my: number): Pet | null {
   return null;
 }
 
-let dragPet: Pet | null = null;
 let dragStart = { x: 0, y: 0, moved: false };
 
 window.addEventListener("mousemove", (e) => {
@@ -693,15 +725,20 @@ window.petApi.onStatus((s) => {
   connStatus = s;
   if (panelPet?.isMe) renderPanel();
 });
+window.petApi.onLocale((d) => {
+  DICT = d.dict;
+  if (panelPet) renderPanel();
+});
 
 async function init(): Promise<void> {
   const data = await window.petApi.getInit();
-  LABELS = data.labels;
+  DICT = data.locale.dict;
   showLabel = data.showLabel;
   connStatus = data.status;
   chatHistory = data.history;
   me = new Pet(data.me, true, Math.floor(canvas.width / 2));
   applyFriends(data.friends);
+  petsReady = true;
   requestAnimationFrame(tick);
 }
 void init();

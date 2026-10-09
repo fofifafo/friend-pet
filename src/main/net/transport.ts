@@ -8,6 +8,10 @@ export type PetColor = "orange" | "gray" | "black" | "white" | "pink" | "brown";
 /** 서버로 나가는 내 상태. 창 제목이나 URL 같은 원본은 절대 포함하지 않는다. */
 export interface MemberState {
   userId: string;
+  /** 친구 목록에 등록할 때 쓰는 짧은 코드 (userId 앞 8자리) */
+  code: string;
+  /** 내가 등록한 친구 코드 목록. 비어 있으면 방 전체가 보인다. */
+  friends: string[];
   nickname: string;
   color: PetColor;
   /** 공유를 끈 상태(투명 모드)면 "unknown" 으로 보내고 sharing=false */

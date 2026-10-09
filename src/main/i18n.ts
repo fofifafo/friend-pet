@@ -1,0 +1,304 @@
+// 다국어 문자열. 메인 프로세스가 사전을 렌더러/설정 창에 넘겨 함께 쓴다.
+import { app } from "electron";
+
+export type Lang = "ko" | "en" | "ja";
+export const LANGS: Lang[] = ["ko", "en", "ja"];
+export const LANG_NAMES: Record<Lang, string> = { ko: "한국어", en: "English", ja: "日本語" };
+
+export type Dict = Record<string, string>;
+
+const ko: Dict = {
+  "setup.basic": "기본",
+  "setup.options": "옵션",
+  "setup.advanced": "고급 설정",
+  "setup.myCode": "내 친구 코드",
+  "setup.copy": "복사",
+  "setup.copied": "복사됨",
+  "setup.friends": "친구 목록",
+  "setup.friendsHint": "비워 두면 같은 초대 코드의 모두가 보입니다. 코드를 넣으면 그 친구들만 보입니다.",
+  "setup.friendPlaceholder": "친구 코드 입력",
+  "setup.add": "추가",
+  "setup.remove": "삭제",
+  "setup.share": "내 상태를 친구에게 공유",
+  "setup.showLabel": "캐릭터 위에 상태 표시",
+  "setup.autostart": "Windows 시작 시 자동 실행",
+  "setup.serverUrl": "서버 URL (Supabase)",
+  "setup.serverKey": "서버 anon 키",
+  "setup.serverHint": "비워 두면 앱에 내장된 서버를 씁니다.",
+  "setup.poll": "활동 확인 주기 (초)",
+  "setup.idle": "자리 비움 판정 (분)",
+  "setup.invalidNumber": "숫자 항목을 확인하세요.",
+  "tray.friendCode": "내 친구 코드: {c}",
+  "cat.coding": "코딩 중",
+  "cat.game": "게임 중",
+  "cat.video": "영상 시청 중",
+  "cat.document": "문서 작업 중",
+  "cat.browsing": "웹 서핑 중",
+  "cat.chat": "대화 중",
+  "cat.away": "자리 비움",
+  "cat.unknown": "뭔가 하는 중",
+
+  "conn.online": "온라인",
+  "conn.demo": "데모 모드",
+  "conn.connecting": "연결 중",
+  "conn.offline": "오프라인",
+
+  "tray.myStatus": "내 상태: {s}",
+  "tray.connection": "연결: {s} · 친구 {n}명",
+  "tray.shareOff": "상태 공유 끄기 (투명 모드)",
+  "tray.shareOn": "상태 공유 켜기",
+  "tray.toggleVisible": "캐릭터 보이기/숨기기",
+  "tray.settings": "설정…",
+  "tray.openConfig": "설정 파일 열기",
+  "tray.language": "언어",
+  "tray.quit": "종료",
+  "tray.tooltip": "친구 펫 - {s}",
+
+  "label.private": "비공개",
+  "panel.me": "{name} (나)",
+  "panel.private": "상태 비공개",
+  "panel.since": "{t}부터",
+  "panel.lastActive": "마지막 활동 {t}",
+  "panel.connection": "연결: {s}",
+  "panel.shareOff": "상태 공유 끄기 (투명 모드)",
+  "panel.shareOn": "상태 공유 켜기",
+  "panel.toAll": "모두에게 보내기…",
+  "panel.toOne": "{name}에게 보내기…",
+  "panel.send": "보내기",
+  "panel.sendFail": "전송 실패: {e}",
+
+  "time.now": "방금",
+  "time.min": "{n}분 전",
+  "time.hour": "{n}시간 전",
+  "time.day": "{n}일 전",
+
+  "setup.title": "친구 펫 설정",
+  "setup.intro": "친구에게 보일 이름과 캐릭터를 정하세요.",
+  "setup.language": "언어",
+  "setup.nickname": "이름",
+  "setup.color": "캐릭터 색",
+  "setup.room": "초대 코드",
+  "setup.roomHint": "같은 코드를 쓰는 친구끼리만 서로 보입니다.",
+  "setup.demo": "데모 모드 (가짜 친구로 체험)",
+  "setup.save": "저장",
+  "setup.cancel": "취소",
+  "setup.nicknameRequired": "이름을 입력하세요.",
+
+  "color.orange": "주황",
+  "color.gray": "회색",
+  "color.black": "검정",
+  "color.white": "흰색",
+  "color.pink": "분홍",
+  "color.brown": "갈색",
+
+  "demo.name1": "데모 민수",
+  "demo.name2": "데모 지은",
+  "demo.replies": "ㅋㅋㅋ 뭐해|나 지금 바빠 ㅠ|오 좋은데?|이따 같이 할래?|잠깐만 이것만 끝내고|👍|밥 먹었어?",
+};
+
+const en: Dict = {
+  "setup.basic": "Basic",
+  "setup.options": "Options",
+  "setup.advanced": "Advanced",
+  "setup.myCode": "My friend code",
+  "setup.copy": "Copy",
+  "setup.copied": "Copied",
+  "setup.friends": "Friend list",
+  "setup.friendsHint": "Leave empty to see everyone with the same invite code. Add codes to see only those friends.",
+  "setup.friendPlaceholder": "Enter a friend code",
+  "setup.add": "Add",
+  "setup.remove": "Remove",
+  "setup.share": "Share my status with friends",
+  "setup.showLabel": "Show status above character",
+  "setup.autostart": "Start with Windows",
+  "setup.serverUrl": "Server URL (Supabase)",
+  "setup.serverKey": "Server anon key",
+  "setup.serverHint": "Leave empty to use the built-in server.",
+  "setup.poll": "Activity check interval (sec)",
+  "setup.idle": "Away after (min)",
+  "setup.invalidNumber": "Please check the number fields.",
+  "tray.friendCode": "My friend code: {c}",
+  "cat.coding": "Coding",
+  "cat.game": "Gaming",
+  "cat.video": "Watching video",
+  "cat.document": "Writing docs",
+  "cat.browsing": "Browsing",
+  "cat.chat": "Chatting",
+  "cat.away": "Away",
+  "cat.unknown": "Doing something",
+
+  "conn.online": "Online",
+  "conn.demo": "Demo mode",
+  "conn.connecting": "Connecting",
+  "conn.offline": "Offline",
+
+  "tray.myStatus": "My status: {s}",
+  "tray.connection": "Connection: {s} · {n} friends",
+  "tray.shareOff": "Stop sharing status (invisible mode)",
+  "tray.shareOn": "Share status",
+  "tray.toggleVisible": "Show/hide character",
+  "tray.settings": "Settings…",
+  "tray.openConfig": "Open config file",
+  "tray.language": "Language",
+  "tray.quit": "Quit",
+  "tray.tooltip": "Friend Pet - {s}",
+
+  "label.private": "private",
+  "panel.me": "{name} (me)",
+  "panel.private": "Status hidden",
+  "panel.since": "since {t}",
+  "panel.lastActive": "last active {t}",
+  "panel.connection": "Connection: {s}",
+  "panel.shareOff": "Stop sharing status (invisible mode)",
+  "panel.shareOn": "Share status",
+  "panel.toAll": "Message everyone…",
+  "panel.toOne": "Message {name}…",
+  "panel.send": "Send",
+  "panel.sendFail": "Send failed: {e}",
+
+  "time.now": "just now",
+  "time.min": "{n} min ago",
+  "time.hour": "{n} h ago",
+  "time.day": "{n} d ago",
+
+  "setup.title": "Friend Pet Settings",
+  "setup.intro": "Choose the name and character your friends will see.",
+  "setup.language": "Language",
+  "setup.nickname": "Name",
+  "setup.color": "Character color",
+  "setup.room": "Invite code",
+  "setup.roomHint": "Only people using the same code can see each other.",
+  "setup.demo": "Demo mode (try it with fake friends)",
+  "setup.save": "Save",
+  "setup.cancel": "Cancel",
+  "setup.nicknameRequired": "Please enter a name.",
+
+  "color.orange": "Orange",
+  "color.gray": "Gray",
+  "color.black": "Black",
+  "color.white": "White",
+  "color.pink": "Pink",
+  "color.brown": "Brown",
+
+  "demo.name1": "Demo Alex",
+  "demo.name2": "Demo Mia",
+  "demo.replies": "lol what's up|busy right now :(|oh nice|wanna play later?|one sec, finishing this|👍|did you eat?",
+};
+
+const ja: Dict = {
+  "setup.basic": "基本",
+  "setup.options": "オプション",
+  "setup.advanced": "詳細設定",
+  "setup.myCode": "自分のフレンドコード",
+  "setup.copy": "コピー",
+  "setup.copied": "コピーしました",
+  "setup.friends": "フレンドリスト",
+  "setup.friendsHint": "空のままなら同じ招待コードの全員が見えます。コードを入れるとその友だちだけ見えます。",
+  "setup.friendPlaceholder": "フレンドコードを入力",
+  "setup.add": "追加",
+  "setup.remove": "削除",
+  "setup.share": "自分の状態を友だちに共有",
+  "setup.showLabel": "キャラクターの上に状態を表示",
+  "setup.autostart": "Windows 起動時に自動実行",
+  "setup.serverUrl": "サーバー URL (Supabase)",
+  "setup.serverKey": "サーバー anon キー",
+  "setup.serverHint": "空のままならアプリ内蔵のサーバーを使います。",
+  "setup.poll": "アクティビティ確認間隔 (秒)",
+  "setup.idle": "離席判定 (分)",
+  "setup.invalidNumber": "数値の項目を確認してください。",
+  "tray.friendCode": "自分のフレンドコード: {c}",
+  "cat.coding": "コーディング中",
+  "cat.game": "ゲーム中",
+  "cat.video": "動画視聴中",
+  "cat.document": "文書作業中",
+  "cat.browsing": "ネットサーフィン中",
+  "cat.chat": "チャット中",
+  "cat.away": "離席中",
+  "cat.unknown": "何かしてる",
+
+  "conn.online": "オンライン",
+  "conn.demo": "デモモード",
+  "conn.connecting": "接続中",
+  "conn.offline": "オフライン",
+
+  "tray.myStatus": "自分の状態: {s}",
+  "tray.connection": "接続: {s} · 友だち {n}人",
+  "tray.shareOff": "状態の共有をオフ (透明モード)",
+  "tray.shareOn": "状態を共有する",
+  "tray.toggleVisible": "キャラクターを表示/非表示",
+  "tray.settings": "設定…",
+  "tray.openConfig": "設定ファイルを開く",
+  "tray.language": "言語",
+  "tray.quit": "終了",
+  "tray.tooltip": "フレンドペット - {s}",
+
+  "label.private": "非公開",
+  "panel.me": "{name} (自分)",
+  "panel.private": "状態は非公開",
+  "panel.since": "{t}から",
+  "panel.lastActive": "最終アクティブ {t}",
+  "panel.connection": "接続: {s}",
+  "panel.shareOff": "状態の共有をオフ (透明モード)",
+  "panel.shareOn": "状態を共有する",
+  "panel.toAll": "全員に送る…",
+  "panel.toOne": "{name}に送る…",
+  "panel.send": "送信",
+  "panel.sendFail": "送信失敗: {e}",
+
+  "time.now": "たった今",
+  "time.min": "{n}分前",
+  "time.hour": "{n}時間前",
+  "time.day": "{n}日前",
+
+  "setup.title": "フレンドペット 設定",
+  "setup.intro": "友だちに表示される名前とキャラクターを決めてください。",
+  "setup.language": "言語",
+  "setup.nickname": "名前",
+  "setup.color": "キャラクターの色",
+  "setup.room": "招待コード",
+  "setup.roomHint": "同じコードを使う友だち同士だけが見えます。",
+  "setup.demo": "デモモード (偽の友だちで体験)",
+  "setup.save": "保存",
+  "setup.cancel": "キャンセル",
+  "setup.nicknameRequired": "名前を入力してください。",
+
+  "color.orange": "オレンジ",
+  "color.gray": "グレー",
+  "color.black": "黒",
+  "color.white": "白",
+  "color.pink": "ピンク",
+  "color.brown": "茶色",
+
+  "demo.name1": "デモ ユウト",
+  "demo.name2": "デモ サクラ",
+  "demo.replies": "www 何してる？|今ちょっと忙しい…|お、いいね|あとで一緒にやる？|ちょっと待って、これ終わらせる|👍|ごはん食べた？",
+};
+
+const DICTS: Record<Lang, Dict> = { ko, en, ja };
+
+export function getDict(lang: Lang): Dict {
+  return DICTS[lang] ?? en;
+}
+
+/** 사전의 문자열에 {name} 자리표시자를 채운다. */
+export function format(template: string, params?: Record<string, string | number>): string {
+  if (!params) return template;
+  return template.replace(/\{(\w+)\}/g, (_, k) => (k in params ? String(params[k]) : `{${k}}`));
+}
+
+export function t(lang: Lang, key: string, params?: Record<string, string | number>): string {
+  const d = getDict(lang);
+  return format(d[key] ?? en[key] ?? key, params);
+}
+
+/** 시스템 언어에서 기본 언어를 고른다. */
+export function detectLang(): Lang {
+  const locale = (app.getLocale() || "").toLowerCase();
+  if (locale.startsWith("ko")) return "ko";
+  if (locale.startsWith("ja")) return "ja";
+  return "en";
+}
+
+export function isLang(v: unknown): v is Lang {
+  return typeof v === "string" && (LANGS as string[]).includes(v);
+}

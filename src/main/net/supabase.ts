@@ -13,6 +13,10 @@ export class SupabaseTransport extends EventEmitter implements Transport {
   private channel: RealtimeChannel | null = null;
   private subscribed = false;
   private heartbeat: NodeJS.Timeout | null = null;
+  private reconnectTimer: NodeJS.Timeout | null = null;
+  private friendsTimer: NodeJS.Timeout | null = null;
+  private reconnectDelay = 5_000;
+  private closed = false;
   private _status: ConnectionStatus = "connecting";
 
   constructor(
@@ -36,11 +40,24 @@ export class SupabaseTransport extends EventEmitter implements Transport {
   }
 
   async connect(): Promise<void> {
+    this.closed = false;
     this.client = createClient(this.url, this.anonKey, {
       realtime: { params: { eventsPerSecond: 5 }, transport: WebSocket as unknown as typeof globalThis.WebSocket },
       auth: { persistSession: false, autoRefreshToken: false },
     });
 
+    this.joinChannel();
+
+    // 60초마다 lastActive 를 갱신해 오래된 presence 를 구분할 수 있게 한다.
+    this.heartbeat = setInterval(() => {
+      this.me = { ...this.me, lastActive: new Date().toISOString() };
+      void this.track();
+    }, 60_000);
+  }
+
+  /** 채널에 들어간다. 끊기면 지수 백오프로 다시 들어간다. */
+  private joinChannel(): void {
+    if (!this.client || this.closed) return;
     // 방 이름이 곧 초대 코드다. 같은 코드를 쓰는 사람끼리만 서로 보인다.
     this.channel = this.client.channel(`friend-pet:${this.room}`, {
       config: {
@@ -49,33 +66,66 @@ export class SupabaseTransport extends EventEmitter implements Transport {
       },
     });
 
-    this.channel.on("presence", { event: "sync" }, () => this.emitFriends());
-    this.channel.on("presence", { event: "join" }, () => this.emitFriends());
-    this.channel.on("presence", { event: "leave" }, () => this.emitFriends());
+    // presence 갱신은 leave+join 으로 들어올 수 있어 잠깐 모아서 한 번만 알린다.
+    this.channel.on("presence", { event: "sync" }, () => this.emitFriendsSoon());
+    this.channel.on("presence", { event: "join" }, () => this.emitFriendsSoon());
+    this.channel.on("presence", { event: "leave" }, () => this.emitFriendsSoon());
     this.channel.on("broadcast", { event: "chat" }, ({ payload }) => {
       const msg = payload as ChatMessage;
-      if (!msg || typeof msg.text !== "string") return;
+      if (!msg || typeof msg.text !== "string" || typeof msg.from !== "string") return;
       if (msg.to !== "all" && msg.to !== this.me.userId) return;
-      this.emit("chat", msg);
+      if (msg.from === this.me.userId) return;
+      // 상대가 보낸 값은 믿지 말고 길이를 자른다.
+      this.emit("chat", {
+        ...msg,
+        text: msg.text.slice(0, 500),
+        fromName: String(msg.fromName ?? "").slice(0, 20),
+      });
     });
 
     this.channel.subscribe(async (status, err) => {
       this.log(`supabase channel: ${status}${err ? " " + err.message : ""}`);
       if (status === "SUBSCRIBED") {
         this.subscribed = true;
+        this.reconnectDelay = 5_000;
         await this.track();
         this.setStatus("online");
       } else if (status === "CLOSED" || status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
         this.subscribed = false;
         this.setStatus("offline");
+        this.emit("friends", []);
+        this.scheduleReconnect();
       }
     });
+  }
 
-    // 60초마다 lastActive 를 갱신해 오래된 presence 를 구분할 수 있게 한다.
-    this.heartbeat = setInterval(() => {
-      this.me = { ...this.me, lastActive: new Date().toISOString() };
-      void this.track();
-    }, 60_000);
+  private scheduleReconnect(): void {
+    if (this.closed || this.reconnectTimer) return;
+    const delay = this.reconnectDelay;
+    this.reconnectDelay = Math.min(this.reconnectDelay * 2, 60_000);
+    this.log(`supabase: ${Math.round(delay / 1000)}s 뒤 재접속`);
+    this.reconnectTimer = setTimeout(async () => {
+      this.reconnectTimer = null;
+      if (this.closed) return;
+      if (this.channel && this.client) {
+        try {
+          await this.client.removeChannel(this.channel);
+        } catch {
+          /* ignore */
+        }
+      }
+      this.channel = null;
+      this.setStatus("connecting");
+      this.joinChannel();
+    }, delay);
+  }
+
+  private emitFriendsSoon(): void {
+    if (this.friendsTimer) return;
+    this.friendsTimer = setTimeout(() => {
+      this.friendsTimer = null;
+      this.emitFriends();
+    }, 400);
   }
 
   private emitFriends(): void {
@@ -88,7 +138,9 @@ export class SupabaseTransport extends EventEmitter implements Transport {
       if (!latest || !latest.userId) continue;
       members.push({
         userId: latest.userId,
-        nickname: latest.nickname,
+        code: String(latest.code ?? latest.userId.slice(0, 8)),
+        friends: Array.isArray(latest.friends) ? latest.friends.map(String).slice(0, 100) : [],
+        nickname: String(latest.nickname ?? "").slice(0, 20),
         color: latest.color,
         category: latest.category,
         sharing: latest.sharing,
@@ -120,7 +172,10 @@ export class SupabaseTransport extends EventEmitter implements Transport {
   }
 
   async disconnect(): Promise<void> {
+    this.closed = true;
     if (this.heartbeat) clearInterval(this.heartbeat);
+    if (this.reconnectTimer) clearTimeout(this.reconnectTimer);
+    if (this.friendsTimer) clearTimeout(this.friendsTimer);
     if (this.channel) {
       try {
         await this.channel.untrack();

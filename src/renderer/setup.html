@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self'; script-src 'self'" />
+  <title>친구 펫 설정</title>
+  <link rel="stylesheet" href="setup.css" />
+</head>
+<body>
+  <form id="form">
+    <p id="intro" class="intro"></p>
+
+    <label>
+      <span id="l-language"></span>
+      <select id="language"></select>
+    </label>
+
+    <label>
+      <span id="l-nickname"></span>
+      <input id="nickname" type="text" maxlength="20" autocomplete="off" />
+    </label>
+
+    <label>
+      <span id="l-color"></span>
+      <div id="colors" class="colors"></div>
+    </label>
+
+    <label>
+      <span id="l-room"></span>
+      <input id="room" type="text" maxlength="40" autocomplete="off" />
+      <small id="room-hint"></small>
+    </label>
+
+    <label>
+      <span id="l-mycode"></span>
+      <div class="row">
+        <input id="mycode" type="text" readonly />
+        <button type="button" id="copy"></button>
+      </div>
+    </label>
+
+    <label>
+      <span id="l-friends"></span>
+      <div class="row">
+        <input id="friend-input" type="text" maxlength="12" autocomplete="off" />
+        <button type="button" id="friend-add"></button>
+      </div>
+      <ul id="friend-list" class="friend-list"></ul>
+      <small id="friends-hint"></small>
+    </label>
+
+    <fieldset class="options">
+      <legend id="l-options"></legend>
+      <label class="check"><input id="share" type="checkbox" /><span id="l-share"></span></label>
+      <label class="check"><input id="showLabel" type="checkbox" /><span id="l-showLabel"></span></label>
+      <label class="check"><input id="autostart" type="checkbox" /><span id="l-autostart"></span></label>
+      <label class="check"><input id="demo" type="checkbox" /><span id="l-demo"></span></label>
+    </fieldset>
+
+    <details class="advanced">
+      <summary id="l-advanced"></summary>
+      <label>
+        <span id="l-serverUrl"></span>
+        <input id="serverUrl" type="text" autocomplete="off" placeholder="https://xxxx.supabase.co" />
+      </label>
+      <label>
+        <span id="l-serverKey"></span>
+        <input id="serverKey" type="text" autocomplete="off" />
+        <small id="server-hint"></small>
+      </label>
+      <div class="row">
+        <label class="half">
+          <span id="l-poll"></span>
+          <input id="poll" type="number" min="1" max="60" />
+        </label>
+        <label class="half">
+          <span id="l-idle"></span>
+          <input id="idle" type="number" min="1" max="1440" />
+        </label>
+      </div>
+    </details>
+
+    <p id="error" class="error"></p>
+
+    <div class="buttons">
+      <button type="button" id="cancel"></button>
+      <button type="submit" id="save" class="primary"></button>
+    </div>
+  </form>
+  <script src="setup.js"></script>
+</body>
+</html>

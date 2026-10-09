@@ -17,6 +17,7 @@ export class ActivityWatcher extends EventEmitter {
   private restartTimer: NodeJS.Timeout | null = null;
   private stopped = false;
   private gotFirst = false;
+  private restartDelay = 5000;
 
   constructor(
     private pollIntervalMs: number,
@@ -50,7 +51,9 @@ export class ActivityWatcher extends EventEmitter {
       this.log(`activity helper exited (${code})`);
       this.proc = null;
       if (!this.stopped) {
-        this.restartTimer = setTimeout(() => this.start(), 5000);
+        // 계속 죽으면 재시작 간격을 늘린다 (최대 60초).
+        this.restartTimer = setTimeout(() => this.start(), this.restartDelay);
+        this.restartDelay = Math.min(this.restartDelay * 2, 60_000);
       }
     });
     this.log("activity helper started");
@@ -80,6 +83,7 @@ export class ActivityWatcher extends EventEmitter {
       }
       if (!this.gotFirst) {
         this.gotFirst = true;
+        this.restartDelay = 5000;
         this.log("activity helper: first sample received");
       }
       // 분류 결과만 남긴다. raw(창 제목 포함)는 여기서 버려진다.
