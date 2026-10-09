@@ -111,4 +111,4 @@ scripts/copy-static.js   html/css/ps1 을 dist 로 복사
 npm run dist
 ```
 
-`release/` 에 설치 파일이 생깁니다. 코드 서명이 없으므로 친구가 설치할 때 Windows SmartScreen 경고가 뜹니다. "추가 정보 → 실행" 으로 진행하면 됩니다.
+`release/` 에 `friend-pet-Setup-<버전>.exe` 와 `friend-pet-portable-<버전>.exe` 가 생깁니다. GitHub Releases 에 올릴 때는 이 영문 이름을 그대로 씁니다 (한글 파일명은 GitHub 이 잘라냅니다). 코드 서명이 없으므로 친구가 설치할 때 Windows SmartScreen 경고가 뜹니다. "추가 정보 → 실행" 으로 진행하면 됩니다.
