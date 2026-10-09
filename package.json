@@ -1,6 +1,6 @@
 {
   "name": "friend-pet",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "친구와 함께하는 데스크톱 펫",
   "main": "dist/main/main.js",
   "private": true,

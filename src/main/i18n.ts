@@ -8,6 +8,19 @@ export const LANG_NAMES: Record<Lang, string> = { ko: "한국어", en: "English"
 export type Dict = Record<string, string>;
 
 const ko: Dict = {
+  "setup.species": "캐릭터 종류",
+  "species.cat": "고양이",
+  "species.dog": "강아지",
+  "species.rabbit": "토끼",
+  "species.bear": "곰",
+  "species.penguin": "펭귄",
+  "species.fox": "여우",
+  "color.default": "기본",
+  "color.red": "주홍",
+  "color.tan": "황갈",
+  "color.cream": "크림",
+  "color.navy": "남색",
+  "color.mint": "민트",
   "setup.basic": "기본",
   "setup.options": "옵션",
   "setup.advanced": "고급 설정",
@@ -97,6 +110,19 @@ const ko: Dict = {
 };
 
 const en: Dict = {
+  "setup.species": "Character",
+  "species.cat": "Cat",
+  "species.dog": "Dog",
+  "species.rabbit": "Rabbit",
+  "species.bear": "Bear",
+  "species.penguin": "Penguin",
+  "species.fox": "Fox",
+  "color.default": "Default",
+  "color.red": "Red",
+  "color.tan": "Tan",
+  "color.cream": "Cream",
+  "color.navy": "Navy",
+  "color.mint": "Mint",
   "setup.basic": "Basic",
   "setup.options": "Options",
   "setup.advanced": "Advanced",
@@ -186,6 +212,19 @@ const en: Dict = {
 };
 
 const ja: Dict = {
+  "setup.species": "キャラクター",
+  "species.cat": "ねこ",
+  "species.dog": "いぬ",
+  "species.rabbit": "うさぎ",
+  "species.bear": "くま",
+  "species.penguin": "ペンギン",
+  "species.fox": "きつね",
+  "color.default": "デフォルト",
+  "color.red": "朱色",
+  "color.tan": "黄褐色",
+  "color.cream": "クリーム",
+  "color.navy": "ネイビー",
+  "color.mint": "ミント",
   "setup.basic": "基本",
   "setup.options": "オプション",
   "setup.advanced": "詳細設定",

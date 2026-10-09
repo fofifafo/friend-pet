@@ -3,7 +3,8 @@
 import type { EventEmitter } from "events";
 import type { Category } from "../classifier";
 
-export type PetColor = "orange" | "gray" | "black" | "white" | "pink" | "brown";
+export type PetColor = string;
+export type PetSpecies = "cat" | "dog" | "rabbit" | "bear" | "penguin" | "fox";
 
 /** 서버로 나가는 내 상태. 창 제목이나 URL 같은 원본은 절대 포함하지 않는다. */
 export interface MemberState {
@@ -13,6 +14,7 @@ export interface MemberState {
   /** 내가 등록한 친구 코드 목록. 비어 있으면 방 전체가 보인다. */
   friends: string[];
   nickname: string;
+  species: PetSpecies;
   color: PetColor;
   /** 공유를 끈 상태(투명 모드)면 "unknown" 으로 보내고 sharing=false */
   category: Category;

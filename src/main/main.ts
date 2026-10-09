@@ -13,7 +13,7 @@ import {
 } from "./config";
 import { ActivityWatcher, ActivityUpdate } from "./activity";
 import type { Category } from "./classifier";
-import type { ChatMessage, ConnectionStatus, MemberState, PetColor, Transport } from "./net/transport";
+import type { ChatMessage, ConnectionStatus, MemberState, PetColor, PetSpecies, Transport } from "./net/transport";
 import { SupabaseTransport } from "./net/supabase";
 import { DemoTransport } from "./net/demo";
 import { Lang, LANGS, LANG_NAMES, detectLang, getDict, isLang, t } from "./i18n";
@@ -28,7 +28,8 @@ let allMembers: MemberState[] = []; // 방에 있는 모든 사람
 let friends: MemberState[] = []; // 내 친구 목록 규칙으로 걸러진 사람
 let history: ChatMessage[] = [];
 const HISTORY_MAX = 100;
-const COLORS: PetColor[] = ["orange", "gray", "black", "white", "pink", "brown"];
+const SPECIES: PetSpecies[] = ["cat", "dog", "rabbit", "bear", "penguin", "fox"];
+const COLORS: PetColor[] = ["", "orange", "red", "tan", "brown", "white", "cream", "gray", "black", "pink", "navy", "mint"];
 
 const isDev = process.argv.includes("--dev");
 const forceSetup = process.argv.includes("--setup");
@@ -138,6 +139,7 @@ function myState(): MemberState {
     code: myCode(),
     friends: config.friends,
     nickname: config.nickname,
+    species: config.species,
     color: config.color,
     category: config.shareActivity ? myCategory : "unknown",
     sharing: config.shareActivity,
@@ -270,6 +272,7 @@ function openSetupWindow(): void {
 interface SetupValues {
   language: string;
   nickname: string;
+  species: string;
   color: string;
   room: string;
   demo: boolean;
@@ -288,11 +291,13 @@ function setupPayload() {
     locale: localePayload(),
     dicts: Object.fromEntries(LANGS.map((l) => [l, getDict(l)])),
     langs: LANGS.map((l) => ({ code: l, name: LANG_NAMES[l] })),
+    species: SPECIES,
     colors: COLORS,
     myCode: myCode(),
     values: {
       language: currentLang(),
       nickname: config.nickname,
+      species: config.species,
       color: config.color,
       room: config.room,
       demo: config.demo,
@@ -327,6 +332,7 @@ async function applySetup(v: SetupValues): Promise<{ ok: boolean; error?: string
 
   const room = String(v.room ?? "").trim().slice(0, 40) || config.room;
   const color = (COLORS as string[]).includes(v.color) ? (v.color as PetColor) : config.color;
+  const species = (SPECIES as string[]).includes(v.species) ? (v.species as PetSpecies) : config.species;
   const language = isLang(v.language) ? v.language : currentLang();
   const demo = Boolean(v.demo);
   const friendsList = (Array.isArray(v.friends) ? v.friends : [])
@@ -348,6 +354,7 @@ async function applySetup(v: SetupValues): Promise<{ ok: boolean; error?: string
 
   config.language = language;
   config.nickname = nickname;
+  config.species = species;
   config.color = color;
   config.room = room;
   config.demo = demo;
@@ -360,7 +367,7 @@ async function applySetup(v: SetupValues): Promise<{ ok: boolean; error?: string
   config.idleAfterSec = idleAfterSec;
   config.setupDone = true;
   saveConfig(config);
-  log(`setup saved: nick=${nickname} color=${color} room=${room} demo=${demo} lang=${language} friends=${friendsList.length}`);
+  log(`setup saved: nick=${nickname} species=${species} color=${color} room=${room} demo=${demo} lang=${language} friends=${friendsList.length}`);
 
   applyAutostart();
   if (langChanged) broadcastLocale();

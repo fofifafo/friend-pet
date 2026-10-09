@@ -4,11 +4,13 @@
 const WebSocket = require("ws");
 const http = require("http");
 
-const [, , urlPart, expression] = process.argv;
-if (!urlPart || !expression) {
-  console.error("usage: node scripts/cdp-eval.js <url part> <expression>");
+const [, , urlPart, exprArg] = process.argv;
+if (!urlPart || !exprArg) {
+  console.error("usage: node scripts/cdp-eval.js <url part> <expression | @file>");
   process.exit(2);
 }
+// "@경로" 로 주면 파일 내용을 표현식으로 쓴다 (셸 따옴표 문제 회피).
+const expression = exprArg.startsWith("@") ? require("fs").readFileSync(exprArg.slice(1), "utf-8") : exprArg;
 
 http.get("http://127.0.0.1:9222/json", (res) => {
   let body = "";

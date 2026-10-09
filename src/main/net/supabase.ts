@@ -141,6 +141,7 @@ export class SupabaseTransport extends EventEmitter implements Transport {
         code: String(latest.code ?? latest.userId.slice(0, 8)),
         friends: Array.isArray(latest.friends) ? latest.friends.map(String).slice(0, 100) : [],
         nickname: String(latest.nickname ?? "").slice(0, 20),
+        species: (latest.species as MemberState["species"]) ?? "cat",
         color: latest.color,
         category: latest.category,
         sharing: latest.sharing,

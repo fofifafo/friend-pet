@@ -66,8 +66,8 @@ small {
   flex-wrap: wrap;
 }
 .swatch {
-  width: 58px;
-  height: 60px;
+  width: 60px;
+  height: 66px;
   padding: 4px 0;
   border-radius: 8px;
   border: 2px solid transparent;
@@ -85,8 +85,8 @@ small {
   white-space: nowrap;
 }
 .swatch canvas {
-  width: 32px;
-  height: 32px;
+  width: 40px;
+  height: 40px;
   image-rendering: pixelated;
 }
 .swatch.selected {

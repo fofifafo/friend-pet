@@ -4,7 +4,7 @@ import * as path from "path";
 import { randomUUID } from "crypto";
 import * as os from "os";
 import type { Category } from "./classifier";
-import type { PetColor } from "./net/transport";
+import type { PetColor, PetSpecies } from "./net/transport";
 import { BUILTIN_SUPABASE, DEFAULT_ROOM } from "./defaults";
 import type { Lang } from "./i18n";
 
@@ -17,7 +17,9 @@ export interface PetConfig {
   nickname: string;
   /** 자동 생성되는 고유 ID. 바꾸지 않는 것이 좋다. */
   userId: string;
-  /** 내 캐릭터 색: orange | gray | black | white | pink | brown */
+  /** 내 캐릭터 종류: cat | dog | rabbit | bear | penguin | fox */
+  species: PetSpecies;
+  /** 내 캐릭터 색 (톤 이름). 비어 있으면 종류별 기본색 */
   color: PetColor;
   /** 초대 코드. 같은 코드를 쓰는 친구끼리만 서로 보인다. */
   room: string;
@@ -55,7 +57,8 @@ const DEFAULTS: PetConfig = {
     }
   })(),
   userId: "",
-  color: "orange",
+  species: "cat",
+  color: "",
   room: DEFAULT_ROOM,
   demo: false,
   friends: [],
@@ -78,7 +81,8 @@ export function loadConfig(): PetConfig {
   let needSave = false;
   try {
     if (fs.existsSync(p)) {
-      const parsed = JSON.parse(fs.readFileSync(p, "utf-8"));
+      // 메모장 등이 붙이는 BOM 을 제거하고 읽는다.
+      const parsed = JSON.parse(fs.readFileSync(p, "utf-8").replace(/^﻿/, ""));
       cfg = {
         ...cfg,
         ...parsed,

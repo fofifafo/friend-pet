@@ -1,4 +1,4 @@
-// 설정 창: 언어, 이름, 캐릭터 색, 초대 코드, 친구 목록, 옵션, 고급 설정.
+// 설정 창: 언어, 이름, 캐릭터 종류/색, 초대 코드, 친구 목록, 옵션, 고급 설정.
 // 스크립트(비모듈) 파일이므로 전역 타입을 직접 선언한다. 이름이 renderer.ts 와 겹치지 않게 Setup 접두어를 쓴다.
 
 interface SetupLocale {
@@ -8,6 +8,7 @@ interface SetupLocale {
 interface SetupValues {
   language: string;
   nickname: string;
+  species: string;
   color: string;
   room: string;
   demo: boolean;
@@ -24,6 +25,7 @@ interface SetupData {
   locale: SetupLocale;
   dicts: Record<string, Record<string, string>>;
   langs: { code: string; name: string }[];
+  species: string[];
   colors: string[];
   myCode: string;
   values: SetupValues;
@@ -37,35 +39,44 @@ interface SetupWindowApi {
 
 const setupApi = (window as unknown as { petApi: SetupWindowApi }).petApi;
 
-// 미리보기용 미니 고양이 (8x8)
-const SETUP_CAT = [
-  "........",
-  ".d....d.",
-  ".dd..dd.",
-  ".dooood.",
-  ".dkoook.",
-  ".doowod.",
-  "..dood..",
-  "..d..d..",
-];
-const SETUP_BASE: Record<string, string> = { o: "#f2a65a", d: "#c7773a", w: "#fff4e0", k: "#2b2b2b" };
-const SETUP_VARIANTS: Record<string, Record<string, string>> = {
-  orange: {},
-  gray: { o: "#9aa0a8", d: "#6b7079", w: "#e8eaee" },
-  black: { o: "#3d3d47", d: "#22222a", w: "#8c8c99", k: "#f2e36b" },
-  white: { o: "#f5f5f0", d: "#c2c0b4", w: "#ffffff" },
-  pink: { o: "#f4a3b5", d: "#c9718a", w: "#ffe6ec" },
-  brown: { o: "#9c6b45", d: "#6e4830", w: "#e3cdb6" },
+// renderer.ts 와 같은 팔레트
+const SETUP_TONES: Record<string, Record<string, string>> = {
+  orange: { o: "#f6b26b", l: "#ffd09a", a: "#d98b45", d: "#8c4a1f" },
+  red: { o: "#f08a3c", l: "#ffb270", a: "#c9671f", d: "#7d3e12" },
+  tan: { o: "#e0b57c", l: "#f3d3a2", a: "#b98a52", d: "#6e4a26" },
+  brown: { o: "#a9754d", l: "#c9966c", a: "#86593a", d: "#4e3220" },
+  white: { o: "#f8f4ee", l: "#ffffff", a: "#ddd2c6", d: "#9c8b7d" },
+  cream: { o: "#f3e2c3", l: "#fff3dd", a: "#d6c09a", d: "#8f7a52" },
+  gray: { o: "#a6abb3", l: "#c9cdd3", a: "#7f858e", d: "#4b5059" },
+  black: { o: "#3d3d47", l: "#55556a", a: "#2a2a33", d: "#15151b", k: "#f2e36b" },
+  pink: { o: "#f6a9ba", l: "#ffd0da", a: "#d8849a", d: "#9a4f66" },
+  navy: { o: "#34455a", l: "#4c6079", a: "#243242", d: "#111a24" },
+  mint: { o: "#9fd8c3", l: "#c9f0e0", a: "#6fb59c", d: "#3a7a63" },
+};
+const SETUP_DEFAULT_COLOR: Record<string, string> = {
+  cat: "orange", dog: "tan", rabbit: "white", bear: "brown", penguin: "navy", fox: "red",
+};
+const SETUP_NOSE: Record<string, string> = {
+  cat: "#4a2c2a", dog: "#2b2b2b", rabbit: "#f48aa4", bear: "#2b2b2b", penguin: "#2b2b2b", fox: "#3a2a2a",
+};
+const SETUP_COMMON: Record<string, string> = {
+  w: "#fff7ea", k: "#2b2b2b", h: "#ffffff", p: "#ff9fb3", y: "#f2a63a", z: "#8fb4ff", e: "#ff6b8a", x: "#ffd43b", c: "#7cc8ff",
 };
 
-function drawMiniCat(color: string): HTMLCanvasElement {
+function setupPalette(species: string, color: string): Record<string, string> {
+  const tones = SETUP_TONES[color] ?? SETUP_TONES[SETUP_DEFAULT_COLOR[species] ?? "orange"];
+  return { ...SETUP_COMMON, m: SETUP_NOSE[species] ?? "#2b2b2b", ...tones };
+}
+
+function drawPreview(species: string, color: string): HTMLCanvasElement {
   const c = document.createElement("canvas");
-  c.width = 8;
-  c.height = 8;
+  c.width = SPR_W;
+  c.height = SPR_H;
   const ctx = c.getContext("2d")!;
-  const pal = { ...SETUP_BASE, ...(SETUP_VARIANTS[color] ?? {}) };
-  SETUP_CAT.forEach((row, y) => {
-    for (let x = 0; x < 8; x++) {
+  const pal = setupPalette(species, color);
+  const rows = (SPR_DATA[species] ?? SPR_DATA.cat).idle.frames[0];
+  rows.forEach((row, y) => {
+    for (let x = 0; x < SPR_W; x++) {
       const ch = row[x];
       if (ch === ".") continue;
       ctx.fillStyle = pal[ch] ?? "#f0f";
@@ -77,7 +88,8 @@ function drawMiniCat(color: string): HTMLCanvasElement {
 
 let setupData: SetupData | null = null;
 let dict: Record<string, string> = {};
-let selectedColor = "orange";
+let selectedSpecies = "cat";
+let selectedColor = "";
 let friendCodes: string[] = [];
 
 function setupTr(key: string, params?: Record<string, string | number>): string {
@@ -94,6 +106,7 @@ function applyStrings(): void {
   $("intro").textContent = setupTr("setup.intro");
   $("l-language").textContent = setupTr("setup.language");
   $("l-nickname").textContent = setupTr("setup.nickname");
+  $("l-species").textContent = setupTr("setup.species");
   $("l-color").textContent = setupTr("setup.color");
   $("l-room").textContent = setupTr("setup.room");
   $("room-hint").textContent = setupTr("setup.roomHint");
@@ -116,10 +129,33 @@ function applyStrings(): void {
   $("l-idle").textContent = setupTr("setup.idle");
   $("save").textContent = setupTr("setup.save");
   $("cancel").textContent = setupTr("setup.cancel");
-  document.querySelectorAll<HTMLElement>(".swatch").forEach((el) => {
-    el.querySelector("span")!.textContent = setupTr(`color.${el.dataset.color}`);
+  document.querySelectorAll<HTMLElement>("#species .swatch").forEach((el) => {
+    el.querySelector("span")!.textContent = setupTr(`species.${el.dataset.species}`);
+  });
+  document.querySelectorAll<HTMLElement>("#colors .swatch").forEach((el) => {
+    el.querySelector("span")!.textContent = setupTr(`color.${el.dataset.color || "default"}`);
   });
   renderFriends();
+}
+
+function renderSpecies(list: string[]): void {
+  const box = $("species");
+  box.innerHTML = "";
+  for (const sp of list) {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "swatch" + (sp === selectedSpecies ? " selected" : "");
+    btn.dataset.species = sp;
+    btn.appendChild(drawPreview(sp, selectedColor));
+    btn.appendChild(document.createElement("span"));
+    btn.addEventListener("click", () => {
+      selectedSpecies = sp;
+      renderSpecies(list);
+      renderColors(setupData!.colors);
+      applyStrings();
+    });
+    box.appendChild(btn);
+  }
 }
 
 function renderColors(colors: string[]): void {
@@ -130,12 +166,13 @@ function renderColors(colors: string[]): void {
     btn.type = "button";
     btn.className = "swatch" + (color === selectedColor ? " selected" : "");
     btn.dataset.color = color;
-    btn.appendChild(drawMiniCat(color));
-    const name = document.createElement("span");
-    btn.appendChild(name);
+    btn.appendChild(drawPreview(selectedSpecies, color));
+    btn.appendChild(document.createElement("span"));
     btn.addEventListener("click", () => {
       selectedColor = color;
-      document.querySelectorAll(".swatch").forEach((el) => el.classList.toggle("selected", el === btn));
+      renderColors(colors);
+      renderSpecies(setupData!.species);
+      applyStrings();
     });
     box.appendChild(btn);
   }
@@ -170,7 +207,8 @@ function addFriend(): void {
 async function initSetup(): Promise<void> {
   setupData = await setupApi.setupGet();
   dict = setupData.locale.dict;
-  selectedColor = setupData.values.color;
+  selectedSpecies = setupData.values.species || "cat";
+  selectedColor = setupData.values.color || "";
   friendCodes = setupData.values.friends.slice();
 
   const langSel = $("language") as HTMLSelectElement;
@@ -183,7 +221,6 @@ async function initSetup(): Promise<void> {
   }
   langSel.value = setupData.values.language;
   langSel.addEventListener("change", () => {
-    // 저장 전에도 선택한 언어로 바로 바뀐다.
     dict = setupData!.dicts[langSel.value] ?? dict;
     applyStrings();
   });
@@ -201,6 +238,7 @@ async function initSetup(): Promise<void> {
   input("poll").value = String(v.pollSec);
   input("idle").value = String(v.idleMin);
 
+  renderSpecies(setupData.species);
   renderColors(setupData.colors);
   applyStrings();
   input("nickname").focus();
@@ -212,6 +250,7 @@ $("form").addEventListener("submit", async (e) => {
   const values: SetupValues = {
     language: ($("language") as HTMLSelectElement).value,
     nickname: input("nickname").value,
+    species: selectedSpecies,
     color: selectedColor,
     room: input("room").value,
     demo: input("demo").checked,

@@ -33,8 +33,8 @@ export class DemoTransport extends EventEmitter implements Transport {
   async connect(): Promise<void> {
     const now = new Date().toISOString();
     this.friends = [
-      { userId: "demo-1", code: "demo-1", friends: [], nickname: this.texts.name1, color: "gray", category: "coding", sharing: true, since: now, lastActive: now },
-      { userId: "demo-2", code: "demo-2", friends: [], nickname: this.texts.name2, color: "pink", category: "video", sharing: true, since: now, lastActive: now },
+      { userId: "demo-1", code: "demo-1", friends: [], nickname: this.texts.name1, species: "dog", color: "tan", category: "coding", sharing: true, since: now, lastActive: now },
+      { userId: "demo-2", code: "demo-2", friends: [], nickname: this.texts.name2, species: "rabbit", color: "white", category: "video", sharing: true, since: now, lastActive: now },
     ];
     this.log("demo transport: 가짜 친구 2명 접속");
     this.emit("status", "demo");
